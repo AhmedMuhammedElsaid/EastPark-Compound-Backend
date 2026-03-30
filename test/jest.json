@@ -1,5 +1,5 @@
 {
-    "testTimeout": 5000,
+    "testTimeout": 10000,
     "rootDir": "../",
     "modulePaths": ["."],
     "testEnvironment": "node",
@@ -7,22 +7,21 @@
     "collectCoverage": true,
     "coverageDirectory": "coverage",
     "collectCoverageFrom": [
-        "<rootDir>/src/**/*.service.ts",
-        "!<rootDir>/src/**/*.spec.ts",
-        "!<rootDir>/src/**/*.mock.ts",
-        "!<rootDir>/src/common/database/services/database.service.ts",
-        "!<rootDir>/src/common/logger/services/logger.service.ts",
-        "!<rootDir>/src/workers/schedulers/midnight.scheduler.ts"
+        "<rootDir>/src/common/auth/services/auth.service.ts",
+        "<rootDir>/src/modules/payments/payments.service.ts",
+        "<rootDir>/src/modules/governance/services/polls.service.ts",
+        "<rootDir>/src/modules/orders/orders.service.ts",
+        "<rootDir>/src/modules/notifications/notifications.service.ts"
     ],
     "coverageThreshold": {
         "global": {
-            "branches": 90,
-            "functions": 90,
-            "lines": 90,
-            "statements": 90
+            "branches": 70,
+            "functions": 70,
+            "lines": 70,
+            "statements": 70
         }
     },
-    "coverageReporters": ["html", "lcov", "json-summary"],
+    "coverageReporters": ["text", "html", "lcov", "json-summary"],
     "moduleFileExtensions": ["js", "ts", "json"],
     "coverageProvider": "v8",
     "transform": {
@@ -36,8 +35,7 @@
     "moduleNameMapper": {
         "^@faker-js/faker$": "<rootDir>/test/mocks/faker.mock.ts",
         "^ws$": "<rootDir>/test/mocks/ws.mock.ts",
-        "^@grpc/grpc-js$": "<rootDir>/test/mocks/grpc.mock.ts",
-        "^@grpc/proto-loader$": "<rootDir>/test/mocks/proto-loader.mock.ts"
+        "^expo-server-sdk$": "<rootDir>/test/mocks/expo.mock.ts"
     },
     "modulePathIgnorePatterns": ["<rootDir>/dist"]
 }

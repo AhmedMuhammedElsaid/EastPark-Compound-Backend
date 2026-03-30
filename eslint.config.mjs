@@ -64,13 +64,13 @@ export default [
     },
     {
         name: 'ts/test',
-        files: ['test/**/*.spec.ts'],
+        files: ['test/**/*.ts'],
         languageOptions: {
             ecmaVersion: 'latest',
             sourceType: 'module',
             parser: tsParser,
             parserOptions: {
-                project: 'tsconfig.json',
+                project: 'tsconfig.test.json',
                 tsconfigRootDir: __dirname,
             },
         },

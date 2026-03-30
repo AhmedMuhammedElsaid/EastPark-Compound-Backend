@@ -4,10 +4,16 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
-import { OrderStatus, PaymentMethod, Role } from '@prisma/client';
+import {
+    NotificationType,
+    OrderStatus,
+    PaymentMethod,
+    Role,
+} from '@prisma/client';
 
 import { DatabaseService } from 'src/common/database/services/database.service';
 import { IAuthUser } from 'src/common/request/interfaces/request.interface';
+import { NotificationsService } from 'src/modules/notifications/notifications.service';
 
 import { OrderCreateDto } from './dtos/request/order.create.dto';
 import { OrderQueryDto } from './dtos/request/order.query.dto';
@@ -18,11 +24,25 @@ import {
 } from './dtos/response/order.response.dto';
 import { OrdersGateway } from './orders.gateway';
 
+const STATUS_LABEL: Record<OrderStatus, { en: string; ar: string }> = {
+    [OrderStatus.PLACED]: { en: 'Order placed', ar: 'تم استلام طلبك' },
+    [OrderStatus.CONFIRMED]: { en: 'Order confirmed', ar: 'تم تأكيد طلبك' },
+    [OrderStatus.PREPARING]: {
+        en: 'Preparing your order',
+        ar: 'جارٍ تحضير طلبك',
+    },
+    [OrderStatus.READY]: { en: 'Order ready', ar: 'طلبك جاهز' },
+    [OrderStatus.ON_THE_WAY]: { en: 'Order on the way', ar: 'طلبك في الطريق' },
+    [OrderStatus.DELIVERED]: { en: 'Order delivered', ar: 'تم توصيل طلبك' },
+    [OrderStatus.CANCELLED]: { en: 'Order cancelled', ar: 'تم إلغاء طلبك' },
+};
+
 @Injectable()
 export class OrdersService {
     constructor(
         private readonly db: DatabaseService,
-        private readonly gateway: OrdersGateway
+        private readonly gateway: OrdersGateway,
+        private readonly notifications: NotificationsService
     ) {}
 
     async create(
@@ -181,6 +201,20 @@ export class OrdersService {
         // Emit real-time update to order room
         this.gateway.emitStatusUpdate(id, dto.status);
 
+        // Push notification to resident
+        const label = STATUS_LABEL[dto.status];
+        this.notifications
+            .send(
+                updated.residentId,
+                NotificationType.ORDER_UPDATE,
+                label.en,
+                label.ar,
+                `Order #${id.slice(-6).toUpperCase()}`,
+                `طلب #${id.slice(-6).toUpperCase()}`,
+                { orderId: id, status: dto.status }
+            )
+            .catch(() => undefined); // fire-and-forget — never block status update
+
         return updated;
     }
 
@@ -207,6 +241,25 @@ export class OrdersService {
         });
 
         this.gateway.emitStatusUpdate(id, OrderStatus.CANCELLED);
+
+        // Notify merchant about the cancellation
+        const shop = await this.db.shop.findUnique({
+            where: { id: updated.shopId },
+            select: { merchantId: true },
+        });
+        if (shop) {
+            this.notifications
+                .send(
+                    shop.merchantId,
+                    NotificationType.ORDER_UPDATE,
+                    'Order cancelled by resident',
+                    'تم إلغاء الطلب من قِبَل الساكن',
+                    `Order #${id.slice(-6).toUpperCase()} was cancelled`,
+                    `الطلب #${id.slice(-6).toUpperCase()} تم إلغاؤه`,
+                    { orderId: id, status: OrderStatus.CANCELLED }
+                )
+                .catch(() => undefined);
+        }
 
         return updated;
     }

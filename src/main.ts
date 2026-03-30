@@ -2,9 +2,13 @@ import 'reflect-metadata';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import {
+    FastifyAdapter,
+    NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
+import fastifyMultipart from '@fastify/multipart';
 import { useContainer } from 'class-validator';
 import { Logger } from 'nestjs-pino';
 
@@ -29,6 +33,14 @@ async function bootstrap(): Promise<void> {
     // Security headers
     await app.register(fastifyHelmet, {
         contentSecurityPolicy: env === 'production',
+    });
+
+    // Multipart (file uploads)
+    await app.register(fastifyMultipart, {
+        limits: {
+            fileSize: 20 * 1024 * 1024, // 20MB max (enforced per-endpoint too)
+            files: 1,
+        },
     });
 
     // CORS

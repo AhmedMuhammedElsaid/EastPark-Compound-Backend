@@ -7,6 +7,7 @@ import { AnnouncementsModule } from 'src/modules/announcements/announcements.mod
 import { FeedbackModule } from 'src/modules/feedback/feedback.module';
 import { GovernanceModule } from 'src/modules/governance/governance.module';
 import { OrdersModule } from 'src/modules/orders/orders.module';
+import { PaymentsModule } from 'src/modules/payments/payments.module';
 import { ProductsModule } from 'src/modules/products/products.module';
 import { ReportsModule } from 'src/modules/reports/reports.module';
 import { ShopsModule } from 'src/modules/shops/shops.module';
@@ -40,6 +41,9 @@ import { HealthController } from './controllers/health.controller';
 
         // Feature modules — Phase 5: Governance
         GovernanceModule,
+
+        // Feature modules — Phase 6: Payments
+        PaymentsModule,
     ],
     controllers: [HealthController],
 })

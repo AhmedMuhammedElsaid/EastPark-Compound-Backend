@@ -220,7 +220,9 @@ class QueryBuilder<T> {
                 items,
             };
         } catch (error) {
-            this.logger.error(`Query execution failed: ${error.message}`);
+            this.logger.error(
+                `Query execution failed: ${(error as Error).message}`
+            );
             throw error;
         }
     }
@@ -253,7 +255,9 @@ class QueryBuilder<T> {
         try {
             return await this.delegate.findMany(query);
         } catch (error) {
-            this.logger.error(`Query execution failed: ${error.message}`);
+            this.logger.error(
+                `Query execution failed: ${(error as Error).message}`
+            );
             throw error;
         }
     }
@@ -286,7 +290,9 @@ class QueryBuilder<T> {
         try {
             return await this.delegate.findFirst(query);
         } catch (error) {
-            this.logger.error(`Query execution failed: ${error.message}`);
+            this.logger.error(
+                `Query execution failed: ${(error as Error).message}`
+            );
             throw error;
         }
     }
@@ -303,7 +309,7 @@ class QueryBuilder<T> {
         try {
             return await this.delegate.count({ where: whereClause });
         } catch (error) {
-            this.logger.error(`Count failed: ${error.message}`);
+            this.logger.error(`Count failed: ${(error as Error).message}`);
             throw error;
         }
     }

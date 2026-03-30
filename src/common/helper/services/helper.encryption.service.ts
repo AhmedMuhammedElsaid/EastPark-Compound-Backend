@@ -30,8 +30,8 @@ export class HelperEncryptionService implements IHelperEncryptionService {
 
     private readonly accessTokenSecret: string;
     private readonly refreshTokenSecret: string;
-    private readonly accessTokenExpire: string;
-    private readonly refreshTokenExpire: string;
+    private readonly accessTokenExpireSec: number;
+    private readonly refreshTokenExpireSec: number;
 
     constructor(
         private readonly configService: ConfigService,
@@ -43,11 +43,11 @@ export class HelperEncryptionService implements IHelperEncryptionService {
         this.refreshTokenSecret = this.configService.getOrThrow<string>(
             'auth.refreshToken.secret'
         );
-        this.accessTokenExpire = this.configService.getOrThrow<string>(
-            'auth.accessToken.tokenExp'
+        this.accessTokenExpireSec = this.parseExpiry(
+            this.configService.getOrThrow<string>('auth.accessToken.tokenExp')
         );
-        this.refreshTokenExpire = this.configService.getOrThrow<string>(
-            'auth.refreshToken.tokenExp'
+        this.refreshTokenExpireSec = this.parseExpiry(
+            this.configService.getOrThrow<string>('auth.refreshToken.tokenExp')
         );
     }
 
@@ -62,16 +62,16 @@ export class HelperEncryptionService implements IHelperEncryptionService {
     }
 
     public createAccessToken(payload: IAuthUser): Promise<string> {
-        return this.jwtService.signAsync(payload, {
+        return this.jwtService.signAsync(payload as object, {
             secret: this.accessTokenSecret,
-            expiresIn: this.accessTokenExpire,
+            expiresIn: this.accessTokenExpireSec,
         });
     }
 
     public createRefreshToken(payload: IAuthUser): Promise<string> {
-        return this.jwtService.signAsync(payload, {
+        return this.jwtService.signAsync(payload as object, {
             secret: this.refreshTokenSecret,
-            expiresIn: this.refreshTokenExpire,
+            expiresIn: this.refreshTokenExpireSec,
         });
     }
 
@@ -111,29 +111,41 @@ export class HelperEncryptionService implements IHelperEncryptionService {
         tag,
         salt,
     }: IEncryptDataPayload): Promise<string> {
-        try {
-            const key = await this.deriveKey(
-                this.accessTokenSecret,
-                Buffer.from(salt, 'hex')
-            );
-            const decipher = createDecipheriv(
-                this.algorithm,
-                key,
-                Buffer.from(iv, 'hex'),
-                {
-                    authTagLength: this.tagLength,
-                }
-            );
-            decipher.setAuthTag(Buffer.from(tag, 'hex'));
+        const key = await this.deriveKey(
+            this.accessTokenSecret,
+            Buffer.from(salt, 'hex')
+        );
+        const decipher = createDecipheriv(
+            this.algorithm,
+            key,
+            Buffer.from(iv, 'hex'),
+            {
+                authTagLength: this.tagLength,
+            }
+        );
+        decipher.setAuthTag(Buffer.from(tag, 'hex'));
 
-            const decrypted = Buffer.concat([
-                decipher.update(Buffer.from(data, 'hex')),
-                decipher.final(),
-            ]);
+        const decrypted = Buffer.concat([
+            decipher.update(Buffer.from(data, 'hex')),
+            decipher.final(),
+        ]);
+        return decrypted.toString('utf8');
+    }
 
-            return decrypted.toString('utf8');
-        } catch (error) {
-            throw error;
+    private parseExpiry(exp: string): number {
+        const unit = exp.slice(-1);
+        const value = parseInt(exp.slice(0, -1), 10);
+        switch (unit) {
+            case 's':
+                return value;
+            case 'm':
+                return value * 60;
+            case 'h':
+                return value * 3600;
+            case 'd':
+                return value * 86400;
+            default:
+                return 900; // fallback: 15 minutes
         }
     }
 

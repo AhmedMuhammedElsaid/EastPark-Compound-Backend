@@ -1,10 +1,9 @@
-import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 
-import { APP_BULL_QUEUES } from 'src/app/enums/app.enum';
-
+import { CacheModule } from '../cache/cache.module';
 import { DatabaseModule } from '../database/database.module';
+import { EmailModule } from '../email/email.module';
 import { HelperModule } from '../helper/helper.module';
 
 import { AuthPublicController } from './controllers/auth.public.controller';
@@ -18,9 +17,8 @@ import { AuthService } from './services/auth.service';
         HelperModule,
         PassportModule,
         DatabaseModule,
-        BullModule.registerQueue({
-            name: APP_BULL_QUEUES.EMAIL,
-        }),
+        CacheModule,
+        EmailModule,
     ],
     providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],
     exports: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],

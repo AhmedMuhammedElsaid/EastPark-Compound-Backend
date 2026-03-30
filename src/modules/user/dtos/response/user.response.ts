@@ -3,49 +3,41 @@ import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { $Enums, User } from '@prisma/client';
 import { Exclude, Expose } from 'class-transformer';
 import {
+    IsBoolean,
     IsDate,
     IsEmail,
     IsEnum,
     IsOptional,
     IsString,
-    IsUUID,
-    IsBoolean,
 } from 'class-validator';
 
 export class UserResponseDto implements Partial<User> {
-    @ApiProperty({
-        example: faker.string.uuid(),
-    })
+    @ApiProperty({ example: faker.string.nanoid() })
     @Expose()
-    @IsUUID()
+    @IsString()
     id: string;
 
-    @ApiProperty({
-        example: faker.internet.email(),
-    })
+    @ApiProperty({ example: faker.person.fullName() })
+    @Expose()
+    @IsString()
+    name: string;
+
+    @ApiProperty({ example: faker.internet.email() })
     @Expose()
     @IsEmail()
     email: string;
 
-    @ApiProperty({
-        example: faker.person.firstName(),
-        required: false,
-        nullable: true,
-    })
+    @ApiProperty({ example: '+201234567890', required: false, nullable: true })
     @Expose()
     @IsString()
     @IsOptional()
-    firstName: string | null;
+    phone: string | null;
 
-    @ApiProperty({
-        example: faker.person.lastName(),
-        required: false,
-        nullable: true,
-    })
+    @ApiProperty({ example: 'A1-301', required: false, nullable: true })
     @Expose()
     @IsString()
     @IsOptional()
-    lastName: string | null;
+    unitNumber: string | null;
 
     @ApiProperty({
         example: faker.image.avatar(),
@@ -55,69 +47,38 @@ export class UserResponseDto implements Partial<User> {
     @Expose()
     @IsString()
     @IsOptional()
-    avatar: string | null;
+    avatarUrl: string | null;
 
-    @ApiProperty({
-        example: faker.internet.username(),
-    })
-    @Expose()
-    @IsString()
-    userName: string;
-
-    @ApiProperty({
-        example: faker.phone.number(),
-        required: false,
-        nullable: true,
-    })
-    @Expose()
-    @IsString()
-    @IsOptional()
-    phone: string | null;
-
-    @ApiProperty({
-        enum: $Enums.Role,
-        example: faker.helpers.arrayElement(Object.values($Enums.Role)),
-    })
+    @ApiProperty({ enum: $Enums.Role, example: $Enums.Role.RESIDENT })
     @Expose()
     @IsEnum($Enums.Role)
     role: $Enums.Role;
 
-    @ApiProperty({
-        example: faker.datatype.boolean(),
-    })
+    @ApiProperty({ example: false })
     @Expose()
     @IsBoolean()
     isVerified: boolean;
 
-    @ApiProperty({
-        example: faker.date.past().toISOString(),
-    })
+    @ApiProperty({ example: faker.date.past().toISOString() })
     @Expose()
     @IsDate()
     createdAt: Date;
 
-    @ApiProperty({
-        example: faker.date.recent().toISOString(),
-    })
+    @ApiProperty({ example: faker.date.recent().toISOString() })
     @Expose()
     @IsDate()
     updatedAt: Date;
 
-    @ApiProperty({
-        example: faker.date.future().toISOString(),
-        required: false,
-        nullable: true,
-    })
-    @Expose()
-    @IsDate()
-    @IsOptional()
-    deletedAt: Date | null;
+    // ── Excluded fields (never sent to client) ────────────────────────────────
 
     @ApiHideProperty()
     @Exclude()
-    password: string;
+    passwordHash: string;
+
+    @ApiHideProperty()
+    @Exclude()
+    pushToken: string | null;
 }
 
 export class UserGetProfileResponseDto extends UserResponseDto {}
-
 export class UserUpdateProfileResponseDto extends UserResponseDto {}

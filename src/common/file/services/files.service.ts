@@ -1,42 +1,106 @@
-import { Injectable } from '@nestjs/common';
-import { PinoLogger } from 'nestjs-pino';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-import { AwsS3Service } from 'src/common/aws/services/aws.s3.service';
+import {
+    ENUM_FILE_ALLOWED_IMAGE,
+    ENUM_FILE_ALLOWED_PDF,
+    ENUM_FILE_STORE,
+    FILE_MAX_IMAGE_SIZE,
+    FILE_MAX_PDF_SIZE,
+} from '../enums/files.enum';
 
-import { FilePresignDto } from '../dtos/request/file.presign.dto';
-import { FilePutPresignResponseDto } from '../dtos/response/file.response.dto';
-import { IFilesServiceInterface } from '../interfaces/files.service.interface';
+export interface UploadResult {
+    url: string;
+    path: string;
+}
 
 @Injectable()
-export class FileService implements IFilesServiceInterface {
-    constructor(
-        private readonly awsS3Service: AwsS3Service,
-        private readonly logger: PinoLogger
-    ) {
-        this.logger.setContext(FileService.name);
+export class FileService {
+    private readonly logger = new Logger(FileService.name);
+    private readonly supabase: SupabaseClient;
+    private readonly bucket: string;
+
+    constructor(private readonly config: ConfigService) {
+        this.supabase = createClient(
+            config.getOrThrow<string>('supabase.url'),
+            config.getOrThrow<string>('supabase.serviceKey')
+        );
+        this.bucket = config.getOrThrow<string>('supabase.bucket');
     }
 
-    async getPresignUrlPutObject(
-        userId: string,
-        { fileName, storeType, contentType }: FilePresignDto
-    ): Promise<FilePutPresignResponseDto> {
-        try {
-            const key = `${userId}/${storeType}/${Date.now()}_${fileName}`;
-
-            const { url, expiresIn } =
-                await this.awsS3Service.getPresignedUploadUrl(key, contentType);
-
-            this.logger.info(
-                { userId, fileName, storeType },
-                'Generated presigned URL for file upload'
+    async uploadImage(
+        buffer: Buffer,
+        fileName: string,
+        contentType: string,
+        storeType: ENUM_FILE_STORE,
+        ownerId: string
+    ): Promise<UploadResult> {
+        const allowed = Object.values(ENUM_FILE_ALLOWED_IMAGE) as string[];
+        if (!allowed.includes(contentType)) {
+            throw new BadRequestException(
+                `Allowed image types: ${allowed.join(', ')}`
             );
-
-            return { url, expiresIn };
-        } catch (error) {
-            this.logger.error(
-                `Failed to generate presigned URL: ${error.message}`
-            );
-            throw error;
         }
+        if (buffer.length > FILE_MAX_IMAGE_SIZE) {
+            throw new BadRequestException('Image must be ≤ 5 MB');
+        }
+        return this.upload(buffer, fileName, contentType, storeType, ownerId);
+    }
+
+    async uploadPdf(
+        buffer: Buffer,
+        fileName: string,
+        storeType: ENUM_FILE_STORE,
+        ownerId: string
+    ): Promise<UploadResult> {
+        if (buffer.length > FILE_MAX_PDF_SIZE) {
+            throw new BadRequestException('PDF must be ≤ 20 MB');
+        }
+        return this.upload(
+            buffer,
+            fileName,
+            ENUM_FILE_ALLOWED_PDF.PDF,
+            storeType,
+            ownerId
+        );
+    }
+
+    async deleteFile(filePath: string): Promise<void> {
+        const { error } = await this.supabase.storage
+            .from(this.bucket)
+            .remove([filePath]);
+        if (error) {
+            this.logger.warn(
+                `Failed to delete file ${filePath}: ${error.message}`
+            );
+        }
+    }
+
+    private async upload(
+        buffer: Buffer,
+        fileName: string,
+        contentType: string,
+        storeType: ENUM_FILE_STORE,
+        ownerId: string
+    ): Promise<UploadResult> {
+        const ext = fileName.split('.').pop() ?? 'bin';
+        const storagePath = `${storeType}/${ownerId}/${Date.now()}.${ext}`;
+
+        const { error } = await this.supabase.storage
+            .from(this.bucket)
+            .upload(storagePath, buffer, { contentType, upsert: false });
+
+        if (error) {
+            this.logger.error(`Supabase upload failed: ${error.message}`);
+            throw new Error(`Upload failed: ${error.message}`);
+        }
+
+        const { data } = this.supabase.storage
+            .from(this.bucket)
+            .getPublicUrl(storagePath);
+
+        this.logger.log(`Uploaded ${storagePath}`);
+        return { url: data.publicUrl, path: storagePath };
     }
 }

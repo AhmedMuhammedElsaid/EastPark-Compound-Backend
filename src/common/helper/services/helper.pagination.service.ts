@@ -78,7 +78,7 @@ export class HelperPaginationService implements IHelperPaginationService {
                 items,
             };
         } catch (error) {
-            this.logger.error(`Pagination failed: ${error.message}`);
+            this.logger.error(`Pagination failed: ${(error as Error).message}`);
             throw error;
         }
     }

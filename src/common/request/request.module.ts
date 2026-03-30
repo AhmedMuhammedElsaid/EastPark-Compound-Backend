@@ -14,32 +14,25 @@ import { RequestLoggerMiddleware } from './middlewares/request.middleware';
             useFactory: (configService: ConfigService) => ({
                 throttlers: [
                     {
-                        ttl: configService.get('app.throttle.ttl'),
-                        limit: configService.get('app.throttle.limit'),
+                        ttl:
+                            configService.get<number>('app.throttle.ttl') ?? 60,
+                        limit:
+                            configService.get<number>('app.throttle.limit') ??
+                            100,
                     },
                 ],
             }),
             inject: [ConfigService],
         }),
     ],
-    exports: [],
     providers: [
-        {
-            provide: APP_GUARD,
-            useClass: ThrottlerGuard,
-        },
-        {
-            provide: APP_GUARD,
-            useClass: JwtAccessGuard,
-        },
-        {
-            provide: APP_GUARD,
-            useClass: RolesGuard,
-        },
+        { provide: APP_GUARD, useClass: ThrottlerGuard },
+        { provide: APP_GUARD, useClass: JwtAccessGuard },
+        { provide: APP_GUARD, useClass: RolesGuard },
     ],
 })
 export class RequestModule {
-    configure(consumer: MiddlewareConsumer) {
+    configure(consumer: MiddlewareConsumer): void {
         consumer.apply(RequestLoggerMiddleware).forRoutes('*');
     }
 }

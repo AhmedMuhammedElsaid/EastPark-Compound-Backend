@@ -1,9 +1,21 @@
-import { FilePresignDto } from '../dtos/request/file.presign.dto';
-import { FilePutPresignResponseDto } from '../dtos/response/file.response.dto';
+import { ENUM_FILE_STORE } from '../enums/files.enum';
+import { UploadResult } from '../services/files.service';
 
-export interface IFilesServiceInterface {
-    getPresignUrlPutObject(
-        userId: string,
-        data: FilePresignDto
-    ): Promise<FilePutPresignResponseDto>;
+export interface IFilesService {
+    uploadImage(
+        buffer: Buffer,
+        fileName: string,
+        contentType: string,
+        storeType: ENUM_FILE_STORE,
+        ownerId: string
+    ): Promise<UploadResult>;
+
+    uploadPdf(
+        buffer: Buffer,
+        fileName: string,
+        storeType: ENUM_FILE_STORE,
+        ownerId: string
+    ): Promise<UploadResult>;
+
+    deleteFile(filePath: string): Promise<void>;
 }

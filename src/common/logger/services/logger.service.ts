@@ -83,8 +83,8 @@ export const createLoggerConfig = (configService: ConfigService): Params => {
             },
 
             // Add correlation ID and context to every log
-            customProps: (req: IncomingMessage & { id?: string }) => ({
-                correlationId: req.id,
+            customProps: (req: any) => ({
+                correlationId: (req as IncomingMessage & { id?: string }).id,
             }),
 
             // Custom serializers - keep only essential fields
@@ -121,10 +121,12 @@ export const createLoggerConfig = (configService: ConfigService): Params => {
             },
 
             // Attach request ID for distributed tracing
-            genReqId: (req: IncomingMessage & { id?: string }) => {
+            genReqId: (req: any) => {
                 return (
-                    req.id ||
-                    req.headers['x-request-id']?.toString() ||
+                    (req as IncomingMessage & { id?: string }).id?.toString() ||
+                    (req as IncomingMessage).headers[
+                        'x-request-id'
+                    ]?.toString() ||
                     crypto.randomUUID()
                 );
             },

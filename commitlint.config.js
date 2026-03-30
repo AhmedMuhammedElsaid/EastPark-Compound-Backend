@@ -10,5 +10,9 @@ module.exports = {
       'never',
       ['start-case', 'pascal-case', 'upper-case'],
     ],
+
+    // Allow custom commit format: [AuthorName][type]: description
+    'type-empty': [0],
+    'subject-empty': [0],
   },
 };

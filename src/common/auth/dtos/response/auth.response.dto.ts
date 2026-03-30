@@ -6,19 +6,13 @@ import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 import { UserResponseDto } from 'src/modules/user/dtos/response/user.response';
 
 export class TokenDto {
-    @ApiProperty({
-        example: faker.string.alphanumeric({ length: 64 }),
-        required: true,
-    })
+    @ApiProperty({ example: faker.string.alphanumeric(64) })
     @Expose()
     @IsString()
     @IsNotEmpty()
     accessToken: string;
 
-    @ApiProperty({
-        example: faker.string.alphanumeric({ length: 64 }),
-        required: true,
-    })
+    @ApiProperty({ example: faker.string.alphanumeric(64) })
     @Expose()
     @IsString()
     @IsNotEmpty()
@@ -26,10 +20,7 @@ export class TokenDto {
 }
 
 export class AuthResponseDto extends TokenDto {
-    @ApiProperty({
-        type: () => UserResponseDto,
-        required: true,
-    })
+    @ApiProperty({ type: () => UserResponseDto })
     @Expose()
     @Type(() => UserResponseDto)
     @ValidateNested()

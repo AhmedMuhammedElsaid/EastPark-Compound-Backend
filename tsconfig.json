@@ -20,8 +20,9 @@
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "strictPropertyInitialization": false
   },
-  "include": ["src", "test"],
-  "exclude": ["node_modules", "dist", "*coverage"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "*coverage", "test"]
 }

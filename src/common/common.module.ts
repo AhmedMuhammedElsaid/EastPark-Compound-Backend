@@ -1,11 +1,11 @@
-import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from './auth/auth.module';
 import { CacheModule } from './cache/cache.module';
 import configs from './config';
 import { DatabaseModule } from './database/database.module';
+import { EmailModule } from './email/email.module';
 import { FileModule } from './file/file.module';
 import { CustomLoggerModule } from './logger/logger.module';
 import { RequestModule } from './request/request.module';
@@ -13,7 +13,7 @@ import { ResponseModule } from './response/response.module';
 
 @Module({
     imports: [
-        // Configuration - Global
+        // Configuration — global, loaded once
         ConfigModule.forRoot({
             load: configs,
             isGlobal: true,
@@ -26,22 +26,14 @@ import { ResponseModule } from './response/response.module';
         DatabaseModule,
         AuthModule,
         FileModule,
+        EmailModule,
 
         // Cross-cutting Concerns
         CustomLoggerModule,
         RequestModule,
         ResponseModule,
         CacheModule,
-
-        // Queue Management - Bull/Redis
-        BullModule.forRootAsync({
-            imports: [ConfigModule],
-            useFactory: (configService: ConfigService) => ({
-                redis: configService.get<string>('redis.url'),
-            }),
-            inject: [ConfigService],
-        }),
     ],
-    exports: [DatabaseModule, CacheModule],
+    exports: [DatabaseModule, CacheModule, EmailModule],
 })
 export class CommonModule {}

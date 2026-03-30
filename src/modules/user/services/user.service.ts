@@ -1,4 +1,9 @@
-import { HttpStatus, Injectable, HttpException } from '@nestjs/common';
+import {
+    HttpException,
+    HttpStatus,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 
 import { DatabaseService } from 'src/common/database/services/database.service';
 import { ApiGenericResponseDto } from 'src/common/response/dtos/response.generic.dto';
@@ -8,71 +13,51 @@ import {
     UserGetProfileResponseDto,
     UserUpdateProfileResponseDto,
 } from '../dtos/response/user.response';
-import { IUserService } from '../interfaces/user.service.interface';
 
 @Injectable()
-export class UserService implements IUserService {
-    constructor(private readonly databaseService: DatabaseService) {}
+export class UserService {
+    constructor(private readonly db: DatabaseService) {}
+
+    async getProfile(userId: string): Promise<UserGetProfileResponseDto> {
+        const user = await this.db.user.findUnique({ where: { id: userId } });
+        if (!user) throw new NotFoundException('User not found');
+        return user;
+    }
 
     async updateUser(
         userId: string,
         data: UserUpdateDto
     ): Promise<UserUpdateProfileResponseDto> {
-        try {
-            const user = await this.databaseService.user.findUnique({
-                where: { id: userId },
-            });
-            if (!user) {
-                throw new HttpException(
-                    'user.error.userNotFound',
-                    HttpStatus.NOT_FOUND
-                );
-            }
-            const updatedUser = await this.databaseService.user.update({
-                where: { id: userId },
-                data,
-            });
-            return updatedUser;
-        } catch (error) {
-            throw error;
-        }
+        const user = await this.db.user.findUnique({ where: { id: userId } });
+        if (!user) throw new NotFoundException('User not found');
+
+        return this.db.user.update({ where: { id: userId }, data });
     }
 
     async deleteUser(userId: string): Promise<ApiGenericResponseDto> {
-        try {
-            const user = await this.databaseService.user.findUnique({
-                where: { id: userId },
-            });
-            if (!user) {
-                throw new HttpException(
-                    'user.error.userNotFound',
-                    HttpStatus.NOT_FOUND
-                );
-            }
-            await this.databaseService.user.update({
-                where: { id: userId },
-                data: { deletedAt: new Date() },
-            });
+        const user = await this.db.user.findUnique({ where: { id: userId } });
+        if (!user) throw new NotFoundException('User not found');
 
-            return {
-                success: true,
-                message: 'user.success.userDeleted',
-            };
-        } catch (error) {
-            throw error;
-        }
-    }
+        // Cascade delete in a transaction to avoid FK constraint errors
+        await this.db.$transaction([
+            this.db.notificationPreference.deleteMany({ where: { userId } }),
+            this.db.notification.deleteMany({ where: { userId } }),
+            this.db.auditLog.deleteMany({ where: { userId } }),
+            this.db.feedbackReply.deleteMany({ where: { authorId: userId } }),
+            this.db.feedback.deleteMany({ where: { userId } }),
+            this.db.savedShop.deleteMany({ where: { userId } }),
+            this.db.comment.deleteMany({ where: { userId } }),
+            this.db.electionVote.deleteMany({ where: { userId } }),
+            this.db.vote.deleteMany({ where: { userId } }),
+            this.db.review.deleteMany({ where: { userId } }),
+            this.db.orderItem.deleteMany({
+                where: { order: { residentId: userId } },
+            }),
+            this.db.order.deleteMany({ where: { residentId: userId } }),
+            this.db.invitation.deleteMany({ where: { invitedById: userId } }),
+            this.db.user.delete({ where: { id: userId } }),
+        ]);
 
-    async getProfile(id: string): Promise<UserGetProfileResponseDto> {
-        const user = await this.databaseService.user.findUnique({
-            where: { id },
-        });
-        if (!user) {
-            throw new HttpException(
-                'user.error.userNotFound',
-                HttpStatus.NOT_FOUND
-            );
-        }
-        return user;
+        return { success: true, message: 'User deleted' };
     }
 }

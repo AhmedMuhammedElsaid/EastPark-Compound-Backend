@@ -1,15 +1,17 @@
 import AppConfig from './app.config';
 import AuthConfig from './auth.config';
-import AwsConfig from './aws.config';
 import DocConfig from './doc.config';
-import MCPConfig from './mcp.config';
+import EmailConfig from './email.config';
+import PaymobConfig from './paymob.config';
 import RedisConfig from './redis.config';
+import SupabaseConfig from './supabase.config';
 
 export default [
     AppConfig,
-    AwsConfig,
     RedisConfig,
     AuthConfig,
     DocConfig,
-    MCPConfig,
+    EmailConfig,
+    SupabaseConfig,
+    PaymobConfig,
 ];

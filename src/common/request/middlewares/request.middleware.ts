@@ -1,24 +1,22 @@
 import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+import { FastifyRequest, FastifyReply } from 'fastify';
 
 @Injectable()
 export class RequestLoggerMiddleware implements NestMiddleware {
-    private logger = new Logger('HTTP');
+    private readonly logger = new Logger('HTTP');
 
-    use(req: Request, res: Response, next: NextFunction) {
-        const { method, originalUrl, ip } = req;
-        const userAgent = req.get('user-agent') || '';
-
-        const startTime = Date.now();
+    use(
+        req: FastifyRequest['raw'],
+        res: FastifyReply['raw'],
+        next: () => void
+    ): void {
+        const method = req.method ?? '';
+        const url = req.url ?? '';
+        const start = Date.now();
 
         res.on('finish', () => {
-            const { statusCode } = res;
-            const contentLength = res.get('content-length');
-            const responseTime = Date.now() - startTime;
-
-            this.logger.log(
-                `${method} ${originalUrl} ${statusCode} ${contentLength} - ${responseTime}ms - ${ip} ${userAgent}`
-            );
+            const ms = Date.now() - start;
+            this.logger.log(`${method} ${url} ${res.statusCode} +${ms}ms`);
         });
 
         next();

@@ -2,50 +2,36 @@ import { faker } from '@faker-js/faker';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
-    IsEmail,
     IsOptional,
+    IsPhoneNumber,
     IsString,
-    MaxLength,
-    MinLength,
+    IsUrl,
+    Length,
 } from 'class-validator';
 
 export class UserUpdateDto {
-    @ApiProperty({
-        example: faker.internet.email(),
-        required: false,
-    })
-    @IsEmail()
-    @IsOptional()
-    @Transform(({ value }) => value?.toLowerCase().trim())
-    email?: string;
-
-    @ApiProperty({
-        example: faker.person.firstName(),
-        required: false,
-    })
+    @ApiProperty({ example: faker.person.fullName(), required: false })
     @IsString()
     @IsOptional()
-    @MinLength(2)
-    @MaxLength(50)
-    @Transform(({ value }) => value?.trim())
-    firstName?: string;
+    @Length(2, 100)
+    @Transform(({ value }: { value: string }) => value?.trim())
+    name?: string;
 
-    @ApiProperty({
-        example: faker.person.lastName(),
-        required: false,
-    })
+    @ApiProperty({ example: '+201234567890', required: false })
+    @IsPhoneNumber()
+    @IsOptional()
+    phone?: string;
+
+    @ApiProperty({ example: 'B2-405', required: false })
     @IsString()
     @IsOptional()
-    @MinLength(2)
-    @MaxLength(50)
-    @Transform(({ value }) => value?.trim())
-    lastName?: string;
+    unitNumber?: string;
 
     @ApiProperty({
-        example: 'user-avatars/1234567890abcdef.jpg',
+        example: 'https://storage.example.com/avatars/user.jpg',
         required: false,
     })
-    @IsString()
+    @IsUrl()
     @IsOptional()
-    avatar?: string;
+    avatarUrl?: string;
 }

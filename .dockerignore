@@ -62,9 +62,8 @@ docker-compose*
 # Kubernetes
 k8s/
 
-# Database
-prisma/migrations
-prisma/migration_lock.toml
+# Database — keep migrations for `prisma migrate deploy` in Docker
+# Do NOT exclude prisma/migrations or prisma/migration_lock.toml
 
 # Logs
 logs

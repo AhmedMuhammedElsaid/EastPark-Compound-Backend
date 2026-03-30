@@ -1,23 +1,41 @@
-FROM node:20-alpine
+# ─── Stage 1: Builder ────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
 
-# Install dependencies needed for native modules
-RUN apk add --no-cache python3 make g++
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Copy dependency files
-COPY package.json yarn.lock ./
+# Dependencies (cached layer)
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# Copy prisma schema and generate client
+# Prisma client
 COPY prisma ./prisma/
-RUN yarn install --frozen-lockfile
-RUN yarn prisma:generate
+RUN pnpm exec prisma generate
 
-# Copy source code (this layer changes most frequently)
+# Build
 COPY . .
+RUN pnpm build
 
-# Expose application port
-EXPOSE 3001
+# ─── Stage 2: Production ──────────────────────────────────────────────────────
+FROM node:20-alpine AS production
 
-# Start development server with hot reload
-CMD ["yarn", "dev"]
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Production deps only
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+
+# Prisma client (re-generate in production image)
+COPY prisma ./prisma/
+RUN pnpm exec prisma generate
+
+# Compiled output
+COPY --from=builder /app/dist ./dist
+
+EXPOSE 3000
+
+# Run migrations then start server
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]

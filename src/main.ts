@@ -2,100 +2,80 @@ import 'reflect-metadata';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { ExpressAdapter } from '@nestjs/platform-express';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import fastifyCors from '@fastify/cors';
+import fastifyHelmet from '@fastify/helmet';
 import { useContainer } from 'class-validator';
-import compression from 'compression';
-import express from 'express';
-import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app/app.module';
-import { APP_ENVIRONMENT } from './app/enums/app.enum';
-import setupSwagger from './swagger';
 
 async function bootstrap(): Promise<void> {
-    const server = express();
-    let app: any;
+    const app = await NestFactory.create<NestFastifyApplication>(
+        AppModule,
+        new FastifyAdapter({ logger: false }),
+        { bufferLogs: true }
+    );
 
-    try {
-        // Create app
-        app = await NestFactory.create(AppModule, new ExpressAdapter(server), {
-            bufferLogs: true,
-        });
+    const config = app.get(ConfigService);
+    const logger = app.get(Logger);
+    const env = config.get<string>('app.env');
+    const host = config.getOrThrow<string>('app.http.host');
+    const port = config.getOrThrow<number>('app.http.port');
 
-        const config = app.get(ConfigService);
-        const logger = app.get(Logger);
-        const env = config.get('app.env');
-        const host = config.getOrThrow('app.http.host');
-        const port = config.getOrThrow('app.http.port');
+    // Pino logger
+    app.useLogger(logger);
 
-        // Middleware
-        // Configure helmet to skip CSP for playground routes (handled by PlaygroundRouterService)
-        app.use(
-            helmet({
-                contentSecurityPolicy: {
-                    directives: {
-                        defaultSrc: ["'self'"],
-                        scriptSrc: ["'self'"],
-                        styleSrc: ["'self'", "'unsafe-inline'"],
-                        imgSrc: ["'self'", 'data:'],
-                    },
-                    // Skip CSP for playground routes - they have their own CSP
-                    skip: req => req.path.startsWith('/mcp/playground'),
-                },
-            })
-        );
-        app.use(compression());
-        app.useLogger(logger);
-        app.enableCors(config.get('app.cors'));
+    // Security headers
+    await app.register(fastifyHelmet, {
+        contentSecurityPolicy: env === 'production',
+    });
 
-        // Global settings
-        app.useGlobalPipes(
-            new ValidationPipe({
-                transform: true,
-                whitelist: true,
-                forbidNonWhitelisted: true,
-            })
-        );
+    // CORS
+    await app.register(fastifyCors, {
+        origin: config.get<string[]>('app.cors.origin') ?? '*',
+        methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+        credentials: true,
+    });
 
-        // Enable versioning (MCP routes use VERSION_NEUTRAL to bypass this)
-        app.enableVersioning({
-            type: VersioningType.URI,
-            defaultVersion: '1',
-        });
+    // Validation
+    app.useGlobalPipes(
+        new ValidationPipe({
+            transform: true,
+            whitelist: true,
+            forbidNonWhitelisted: true,
+        })
+    );
 
-        useContainer(app.select(AppModule), { fallbackOnErrors: true });
+    // URI versioning — all routes prefixed /v1/
+    app.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: '1',
+    });
 
-        // Swagger for non-production
-        if (env !== APP_ENVIRONMENT.PRODUCTION) {
-            setupSwagger(app);
-        }
+    useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
-        // Graceful shutdown (only in production - watch mode handles this differently)
-        if (env === APP_ENVIRONMENT.PRODUCTION) {
-            const gracefulShutdown = async (signal: string) => {
-                logger.log(`Received ${signal}, shutting down gracefully...`);
-                await app.close();
-                process.exit(0);
-            };
-
-            process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-            process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-        } else {
-            // In development, enable shutdown hooks for proper cleanup
-            app.enableShutdownHooks();
-        }
-
-        // Start server
-        await app.listen(port, host);
-
-        const appUrl = await app.getUrl();
-        logger.log(`Server running on: ${appUrl}`);
-    } catch (error) {
-        console.error('Server failed to start:', error);
-        if (app) await app.close();
-        process.exit(1);
+    // Swagger — dev/staging only
+    if (env !== 'production') {
+        const { default: setupSwagger } = await import('./swagger');
+        setupSwagger(app);
     }
+
+    // Graceful shutdown
+    app.enableShutdownHooks();
+    process.on('SIGTERM', async () => {
+        logger.log('SIGTERM received — shutting down');
+        await app.close();
+        process.exit(0);
+    });
+    process.on('SIGINT', async () => {
+        logger.log('SIGINT received — shutting down');
+        await app.close();
+        process.exit(0);
+    });
+
+    await app.listen(port, host);
+    logger.log(`EastPark API running → http://${host}:${port}/v1`);
 }
 
 bootstrap();

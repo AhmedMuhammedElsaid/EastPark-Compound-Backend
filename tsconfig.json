@@ -16,7 +16,11 @@
     "allowJs": false,
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true
   },
   "include": ["src", "test"],
   "exclude": ["node_modules", "dist", "*coverage"]

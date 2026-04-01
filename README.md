@@ -259,10 +259,12 @@ AUTH
   POST  /v1/auth/accept-invitation    Merchant/admin invite flow
 
 USERS
-  GET   /v1/users/me                  My profile
-  PATCH /v1/users/me                  Update profile
-  PATCH /v1/users/me/push-token       Register Expo push token (call after login)
-  DELETE /v1/users/me                 Delete account
+  GET   /v1/user/profile              My profile
+  PUT   /v1/user                      Update profile
+  DELETE /v1/admin/user/:id           Delete user account [admin only]
+
+AUTH (continued)
+  PATCH /v1/auth/push-token           Register Expo push token (call after every login)
 
 SHOPS
   GET   /v1/shops                     List shops (public, cursor-paginated)
@@ -274,19 +276,20 @@ SHOPS
   DELETE /v1/shops/:id/photos/:photoId Remove photo [merchant]
 
 PRODUCTS
-  GET   /v1/shops/:shopId/products    List products (public)
-  POST  /v1/shops/:shopId/products    Create product [merchant]
-  PATCH /v1/shops/:shopId/products/:id Update product [merchant]
-  DELETE /v1/shops/:shopId/products/:id Soft-delete product [merchant]
+  GET   /v1/shops/:shopId/products       List products (public)
+  GET   /v1/shops/:shopId/products/:id   Product detail (public)  ⚠ not yet implemented
+  POST  /v1/shops/:shopId/products       Create product [merchant]
+  PATCH /v1/shops/:shopId/products/:id   Update product [merchant]
+  DELETE /v1/shops/:shopId/products/:id  Soft-delete product [merchant]
 
 ORDERS
   POST  /v1/orders                    Place order [resident]
   GET   /v1/orders                    My orders / shop orders (resident | merchant)
   GET   /v1/orders/:id                Order detail
   PATCH /v1/orders/:id/status         Update status [merchant, admin]
-  POST  /v1/orders/:id/cancel         Cancel order while PLACED [resident]
+  PATCH /v1/orders/:id/cancel         Cancel order while PLACED [resident]
 
-REVIEWS
+REVIEWS  ⚠ controller not yet implemented
   POST  /v1/shops/:shopId/reviews     Leave review (1 per shop) [resident]
   GET   /v1/shops/:shopId/reviews     List reviews (public)
 
@@ -294,10 +297,11 @@ ANNOUNCEMENTS
   GET   /v1/announcements             Feed (public, cursor-paginated)
   GET   /v1/announcements/:id         Detail + comments (public)
   POST  /v1/announcements             Create [admin]
-  POST  /v1/announcements/:id/comments Comment [resident]
+  POST  /v1/announcements/:id/comments Comment [resident, merchant, admin]
 
 REPORTS
   GET   /v1/reports                   Official PDF reports (public)
+  GET   /v1/reports/:id               Single report detail (public)  ⚠ not yet implemented
   POST  /v1/reports                   Upload report [admin]
 
 GOVERNANCE — POLLS

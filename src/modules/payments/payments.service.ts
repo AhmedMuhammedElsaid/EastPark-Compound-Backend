@@ -1,5 +1,7 @@
 import {
+    BadGatewayException,
     BadRequestException,
+    ForbiddenException,
     Injectable,
     Logger,
     NotFoundException,
@@ -117,5 +119,76 @@ export class PaymentsService {
         this.logger.log(
             `Order ${merchantOrderId} marked as paid (Paymob tx: ${obj.id})`
         );
+    }
+
+    async initiatePayment(
+        orderId: string,
+        actorId: string,
+    ): Promise<{ paymentKey: string; iframeUrl: string }> {
+        const order = await this.db.order.findUnique({
+            where: { id: orderId },
+            include: { resident: true },
+        });
+        if (!order) throw new NotFoundException('order.error.notFound');
+        if (order.residentId !== actorId) throw new ForbiddenException();
+
+        const apiKey        = this.config.getOrThrow<string>('paymob.apiKey');
+        const integrationId = this.config.getOrThrow<string>('paymob.integrationId');
+        const iframeId      = this.config.getOrThrow<string>('paymob.iframeId');
+        const amountCents   = Math.round(order.totalAmount * 100);
+        const user          = order.resident;
+
+        // Step 1 — Auth token
+        const authRes = await fetch('https://accept.paymob.com/api/auth/tokens', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_key: apiKey }),
+        });
+        if (!authRes.ok) throw new BadGatewayException('payments.error.paymobUnavailable');
+        const { token: authToken } = await authRes.json() as { token: string };
+
+        // Step 2 — Register order
+        const orderRes = await fetch('https://accept.paymob.com/api/ecommerce/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+            body: JSON.stringify({
+                amount_cents: amountCents,
+                currency: 'EGP',
+                merchant_order_id: order.id,
+                items: [],
+            }),
+        });
+        if (!orderRes.ok) throw new BadGatewayException('payments.error.paymobUnavailable');
+        const { id: paymobOrderId } = await orderRes.json() as { id: number };
+
+        // Step 3 — Payment key
+        const nameParts = user.name.split(' ');
+        const keyRes = await fetch('https://accept.paymob.com/api/acceptance/payment_keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+            body: JSON.stringify({
+                amount_cents: amountCents,
+                currency: 'EGP',
+                order_id: paymobOrderId,
+                billing_data: {
+                    first_name:      nameParts[0] ?? user.name,
+                    last_name:       nameParts.slice(1).join(' ') || 'N/A',
+                    email:           user.email,
+                    phone_number:    user.phone ?? 'N/A',
+                    apartment: 'N/A', floor: 'N/A', street: 'N/A',
+                    building: 'N/A', shipping_method: 'NA',
+                    postal_code: 'N/A', city: 'N/A', country: 'EG', state: 'N/A',
+                },
+                integration_id: Number(integrationId),
+                expiration: 3600,
+            }),
+        });
+        if (!keyRes.ok) throw new BadGatewayException('payments.error.paymobUnavailable');
+        const { token: paymentKey } = await keyRes.json() as { token: string };
+
+        return {
+            paymentKey,
+            iframeUrl: `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${paymentKey}`,
+        };
     }
 }

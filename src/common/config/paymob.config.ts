@@ -3,7 +3,9 @@ import { registerAs } from '@nestjs/config';
 export default registerAs(
     'paymob',
     (): Record<string, unknown> => ({
-        apiKey: process.env.PAYMOB_API_KEY ?? '',
-        hmacSecret: process.env.PAYMOB_HMAC_SECRET ?? '',
+        apiKey:        process.env.PAYMOB_API_KEY         ?? '',
+        hmacSecret:    process.env.PAYMOB_HMAC_SECRET     ?? '',
+        integrationId: process.env.PAYMOB_INTEGRATION_ID  ?? '',
+        iframeId:      process.env.PAYMOB_IFRAME_ID       ?? '',
     })
 );

@@ -1,19 +1,24 @@
 import {
+    Body,
     Controller,
     Get,
     HttpCode,
     HttpStatus,
     Param,
+    ParseEnumPipe,
     Patch,
+    Put,
     Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { NotificationType, Role } from '@prisma/client';
 
 import { AllowedRoles } from 'src/common/request/decorators/request.role.decorator';
 import { AuthUser } from 'src/common/request/decorators/request.user.decorator';
 import { IAuthUser } from 'src/common/request/interfaces/request.interface';
 
+import { UpdateNotificationPreferenceDto } from './dtos/request/notification.preference.dto';
+import { NotificationPreferenceResponseDto } from './dtos/response/notification.preference.response.dto';
 import { NotificationQueryDto } from './dtos/request/notification.query.dto';
 import { NotificationListResponseDto } from './dtos/response/notification.response.dto';
 import { NotificationsService } from './notifications.service';
@@ -45,6 +50,28 @@ export class NotificationsController {
         @AuthUser() actor: IAuthUser
     ): Promise<{ count: number }> {
         return this.notificationsService.markAllRead(actor);
+    }
+
+    @Get('preferences')
+    @AllowedRoles([Role.RESIDENT, Role.MERCHANT, Role.ADMIN])
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Get my notification preferences' })
+    async getPreferences(
+        @AuthUser() actor: IAuthUser,
+    ): Promise<NotificationPreferenceResponseDto[]> {
+        return this.notificationsService.getPreferences(actor.userId);
+    }
+
+    @Put('preferences/:type')
+    @AllowedRoles([Role.RESIDENT, Role.MERCHANT, Role.ADMIN])
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Update a notification preference' })
+    async updatePreference(
+        @Param('type', new ParseEnumPipe(NotificationType)) type: NotificationType,
+        @Body() dto: UpdateNotificationPreferenceDto,
+        @AuthUser() actor: IAuthUser,
+    ): Promise<NotificationPreferenceResponseDto> {
+        return this.notificationsService.updatePreference(actor.userId, type, dto.enabled);
     }
 
     @Patch(':id/read')

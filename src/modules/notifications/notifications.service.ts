@@ -6,6 +6,7 @@ import { DatabaseService } from 'src/common/database/services/database.service';
 import { IAuthUser } from 'src/common/request/interfaces/request.interface';
 
 import { NotificationQueryDto } from './dtos/request/notification.query.dto';
+import { NotificationPreferenceResponseDto } from './dtos/response/notification.preference.response.dto';
 import {
     NotificationListResponseDto,
     NotificationResponseDto,
@@ -161,5 +162,24 @@ export class NotificationsService {
             data: { isRead: true },
         });
         return { count: result.count };
+    }
+
+    async getPreferences(userId: string): Promise<NotificationPreferenceResponseDto[]> {
+        const rows = await this.db.notificationPreference.findMany({
+            where: { userId },
+        });
+        return Object.values(NotificationType).map(type => {
+            const row = rows.find(r => r.type === type);
+            return { type, enabled: row ? row.enabled : true };
+        });
+    }
+
+    async updatePreference(userId: string, type: NotificationType, enabled: boolean): Promise<NotificationPreferenceResponseDto> {
+        const pref = await this.db.notificationPreference.upsert({
+            where: { userId_type: { userId, type } },
+            create: { userId, type, enabled },
+            update: { enabled },
+        });
+        return { type: pref.type, enabled: pref.enabled };
     }
 }

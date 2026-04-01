@@ -33,9 +33,12 @@ export class ShopsService {
                 deliveryTime: dto.deliveryTime,
                 merchantId: dto.merchantId,
             },
-            include: { photos: { orderBy: { order: 'asc' } } },
+            include: {
+                photos: { orderBy: { order: 'asc' } },
+                _count: { select: { reviews: true } },
+            },
         });
-        return shop;
+        return { ...shop, reviewCount: shop._count.reviews, averageRating: null };
     }
 
     async findAll(query: ShopQueryDto): Promise<ShopListResponseDto> {
@@ -66,7 +69,10 @@ export class ShopsService {
             take: limit + 1,
             ...(query.cursor ? { skip: 1, cursor: { id: query.cursor } } : {}),
             orderBy: { createdAt: 'desc' },
-            include: { photos: { orderBy: { order: 'asc' } } },
+            include: {
+                photos: { orderBy: { order: 'asc' } },
+                _count: { select: { reviews: true } },
+            },
         });
 
         let nextCursor: string | undefined;
@@ -75,16 +81,32 @@ export class ShopsService {
             nextCursor = last?.id;
         }
 
-        return { items, nextCursor };
+        return {
+            items: items.map((shop) => ({
+                ...shop,
+                reviewCount: shop._count.reviews,
+                averageRating: null,
+            })),
+            nextCursor,
+        };
     }
 
     async findOne(id: string): Promise<ShopResponseDto> {
-        const shop = await this.db.shop.findUnique({
-            where: { id },
-            include: { photos: { orderBy: { order: 'asc' } } },
-        });
+        const [shop, aggregate] = await Promise.all([
+            this.db.shop.findUnique({
+                where: { id },
+                include: {
+                    photos: { orderBy: { order: 'asc' } },
+                    _count: { select: { reviews: true } },
+                },
+            }),
+            this.db.review.aggregate({
+                where: { shopId: id },
+                _avg: { rating: true },
+            }),
+        ]);
         if (!shop) throw new NotFoundException('shop.error.notFound');
-        return shop;
+        return { ...shop, reviewCount: shop._count.reviews, averageRating: aggregate._avg.rating };
     }
 
     async update(
@@ -115,9 +137,12 @@ export class ShopsService {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 workingHours: dto.workingHours as any,
             },
-            include: { photos: { orderBy: { order: 'asc' } } },
+            include: {
+                photos: { orderBy: { order: 'asc' } },
+                _count: { select: { reviews: true } },
+            },
         });
-        return updated as ShopResponseDto;
+        return { ...updated, reviewCount: updated._count.reviews, averageRating: null };
     }
 
     async remove(id: string): Promise<void> {

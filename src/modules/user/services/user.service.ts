@@ -60,4 +60,8 @@ export class UserService {
 
         return { success: true, message: 'User deleted' };
     }
+
+    async deleteAccount(userId: string): Promise<void> {
+        await this.deleteUser(userId);
+    }
 }

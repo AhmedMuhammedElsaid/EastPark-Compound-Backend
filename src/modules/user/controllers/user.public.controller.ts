@@ -1,7 +1,17 @@
-import { Body, Controller, Get, HttpStatus, Put } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Put,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 
 import { DocResponse } from 'src/common/doc/decorators/doc.response.decorator';
+import { AllowedRoles } from 'src/common/request/decorators/request.role.decorator';
 import { AuthUser } from 'src/common/request/decorators/request.user.decorator';
 import { IAuthUser } from 'src/common/request/interfaces/request.interface';
 
@@ -47,5 +57,14 @@ export class UserPublicController {
         @Body() payload: UserUpdateDto
     ): Promise<UserUpdateProfileResponseDto> {
         return this.userService.updateUser(user.userId, payload);
+    }
+
+    @Delete()
+    @AllowedRoles([Role.RESIDENT, Role.MERCHANT])
+    @ApiBearerAuth('accessToken')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @ApiOperation({ summary: 'Delete my account [RESIDENT | MERCHANT]' })
+    public async deleteAccount(@AuthUser() actor: IAuthUser): Promise<void> {
+        await this.userService.deleteAccount(actor.userId);
     }
 }

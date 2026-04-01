@@ -24,6 +24,8 @@ export class ShopResponseDto {
     @ApiProperty() merchantId: string;
     @ApiProperty() createdAt: Date;
     @ApiProperty() updatedAt: Date;
+    @ApiProperty({ description: 'Number of reviews' }) reviewCount: number;
+    @ApiPropertyOptional({ description: 'Average rating (1–5) or null if no reviews' }) averageRating?: number | null;
 }
 
 export class ShopListResponseDto {

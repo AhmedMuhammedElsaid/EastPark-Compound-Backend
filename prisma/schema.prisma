@@ -74,6 +74,12 @@ enum NotificationType {
   FEEDBACK_UPDATE
 }
 
+enum ElectionVisibilityMode {
+  SEALED_UNTIL_DEADLINE
+  LIVE_COUNT
+  ADMIN_CONTROLLED
+}
+
 // ─── Auth & Users ─────────────────────────────────────────────────────────────
 
 model User {
@@ -341,8 +347,9 @@ model Election {
   titleAr     String
   description String?
   expiresAt   DateTime
-  resultsOpen Boolean  @default(false) // flipped by @Cron every 5min when expiresAt passed
-  createdAt   DateTime @default(now())
+  resultsOpen    Boolean                @default(false) // flipped by @Cron every 5min when expiresAt passed
+  visibilityMode ElectionVisibilityMode @default(SEALED_UNTIL_DEADLINE)
+  createdAt      DateTime               @default(now())
 
   candidates Candidate[]
   votes      ElectionVote[]

@@ -4,6 +4,7 @@ import { TerminusModule } from '@nestjs/terminus';
 
 import { CommonModule } from 'src/common/common.module';
 import { AnnouncementsModule } from 'src/modules/announcements/announcements.module';
+import { InvitationsModule } from 'src/modules/invitations/invitations.module';
 import { FeedbackModule } from 'src/modules/feedback/feedback.module';
 import { GovernanceModule } from 'src/modules/governance/governance.module';
 import { OrdersModule } from 'src/modules/orders/orders.module';
@@ -48,6 +49,9 @@ import { HealthController } from './controllers/health.controller';
 
         // Feature modules — Phase 7: Notifications
         NotificationsModule,
+
+        // Phase 8: Admin tools
+        InvitationsModule,
     ],
     controllers: [HealthController],
 })

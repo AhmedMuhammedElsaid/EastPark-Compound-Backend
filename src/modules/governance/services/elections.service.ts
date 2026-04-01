@@ -5,6 +5,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { ElectionVisibilityMode } from '@prisma/client';
 
 import { DatabaseService } from 'src/common/database/services/database.service';
 import { IAuthUser } from 'src/common/request/interfaces/request.interface';
@@ -29,7 +30,11 @@ export class ElectionsService {
     @Cron('*/5 * * * *')
     async openExpiredResults(): Promise<void> {
         const updated = await this.db.election.updateMany({
-            where: { resultsOpen: false, expiresAt: { lte: new Date() } },
+            where: {
+                resultsOpen: false,
+                expiresAt: { lte: new Date() },
+                visibilityMode: { not: ElectionVisibilityMode.ADMIN_CONTROLLED },
+            },
             data: { resultsOpen: true },
         });
 
@@ -46,16 +51,14 @@ export class ElectionsService {
                 title: dto.title,
                 titleAr: dto.titleAr,
                 description: dto.description,
+                descriptionAr: dto.descriptionAr,
                 expiresAt: dto.expiresAt,
+                visibilityMode: dto.visibilityMode ?? ElectionVisibilityMode.SEALED_UNTIL_DEADLINE,
             },
             include: { candidates: true },
         });
 
-        return {
-            ...election,
-            candidates: election.candidates,
-            myVoteCandidateId: null,
-        };
+        return this.buildElectionDto(election, null);
     }
 
     async addCandidate(
@@ -76,14 +79,16 @@ export class ElectionsService {
         election: any,
         myVoteCandidateId: string | null
     ): ElectionResponseDto {
-        const showResults = election.resultsOpen;
+        const showResults = election.resultsOpen || election.visibilityMode === ElectionVisibilityMode.LIVE_COUNT;
         return {
             id: election.id,
             title: election.title,
             titleAr: election.titleAr,
             description: election.description,
+            descriptionAr: election.descriptionAr ?? null,
             expiresAt: election.expiresAt,
             resultsOpen: election.resultsOpen,
+            visibilityMode: election.visibilityMode,
             createdAt: election.createdAt,
             candidates: election.candidates.map((c: any) => ({
                 id: c.id,

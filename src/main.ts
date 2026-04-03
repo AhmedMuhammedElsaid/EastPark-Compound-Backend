@@ -45,8 +45,8 @@ async function bootstrap(): Promise<void> {
 
     // CORS
     await app.register(fastifyCors, {
-        origin: config.get<string[]>('app.cors.origin') ?? '*',
-        methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+        origin: config.get<boolean | string[]>('app.cors.origin') ?? true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         credentials: true,
     });
 

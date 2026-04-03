@@ -5,7 +5,7 @@ const db = new PrismaClient();
 
 async function main() {
     const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@eastpark.app';
-    const password = process.env.SEED_ADMIN_PASSWORD ?? 'Admin@123456';
+    const password = process.env.SEED_ADMIN_PASSWORD ?? 'HelloWorld#1234@';
     const name = process.env.SEED_ADMIN_NAME ?? 'EastPark Admin';
 
     const existing = await db.user.findUnique({ where: { email } });

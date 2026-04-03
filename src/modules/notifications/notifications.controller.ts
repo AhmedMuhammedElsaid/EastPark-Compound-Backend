@@ -10,7 +10,12 @@ import {
     Put,
     Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+    ApiBearerAuth,
+    ApiOperation,
+    ApiParam,
+    ApiTags,
+} from '@nestjs/swagger';
 import { NotificationType, Role } from '@prisma/client';
 
 import { AllowedRoles } from 'src/common/request/decorators/request.role.decorator';
@@ -57,7 +62,7 @@ export class NotificationsController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Get my notification preferences' })
     async getPreferences(
-        @AuthUser() actor: IAuthUser,
+        @AuthUser() actor: IAuthUser
     ): Promise<NotificationPreferenceResponseDto[]> {
         return this.notificationsService.getPreferences(actor.userId);
     }
@@ -66,12 +71,22 @@ export class NotificationsController {
     @AllowedRoles([Role.RESIDENT, Role.MERCHANT, Role.ADMIN])
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Update a notification preference' })
+    @ApiParam({
+        name: 'type',
+        enum: NotificationType,
+        enumName: 'NotificationType',
+    })
     async updatePreference(
-        @Param('type', new ParseEnumPipe(NotificationType)) type: NotificationType,
+        @Param('type', new ParseEnumPipe(NotificationType))
+        type: NotificationType,
         @Body() dto: UpdateNotificationPreferenceDto,
-        @AuthUser() actor: IAuthUser,
+        @AuthUser() actor: IAuthUser
     ): Promise<NotificationPreferenceResponseDto> {
-        return this.notificationsService.updatePreference(actor.userId, type, dto.enabled);
+        return this.notificationsService.updatePreference(
+            actor.userId,
+            type,
+            dto.enabled
+        );
     }
 
     @Patch(':id/read')

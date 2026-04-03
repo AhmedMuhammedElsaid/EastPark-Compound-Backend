@@ -3,9 +3,11 @@ import { registerAs } from '@nestjs/config';
 import { APP_ENVIRONMENT } from 'src/app/enums/app.enum';
 
 export default registerAs('app', (): Record<string, unknown> => {
-    const corsOrigins = process.env.APP_CORS_ORIGINS
-        ? process.env.APP_CORS_ORIGINS.split(',').map(o => o.trim())
-        : ['*'];
+    const raw = process.env.APP_CORS_ORIGINS ?? '*';
+    // '*' → true: @fastify/cors reflects the request Origin (required when credentials: true)
+    // Comma-separated list → explicit allowlist
+    const corsOrigins: boolean | string[] =
+        raw === '*' ? true : raw.split(',').map(o => o.trim());
 
     return {
         env: process.env.APP_ENV ?? APP_ENVIRONMENT.LOCAL,

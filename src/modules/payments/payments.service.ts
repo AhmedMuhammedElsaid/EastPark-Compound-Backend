@@ -10,6 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'node:crypto';
 
+import { CacheService } from 'src/common/cache/services/cache.service';
 import { DatabaseService } from 'src/common/database/services/database.service';
 
 export interface PaymobWebhookPayload {
@@ -57,9 +58,14 @@ export class PaymentsService {
 
     constructor(
         private readonly db: DatabaseService,
+        private readonly cache: CacheService,
         private readonly config: ConfigService
     ) {
         this.hmacSecret = this.config.getOrThrow<string>('paymob.hmacSecret');
+    }
+
+    private paymobTxKey(txId: number): string {
+        return `paymob:processed:${txId}`;
     }
 
     verifyHmac(body: Record<string, unknown>, hmac: string): boolean {
@@ -77,7 +83,15 @@ export class PaymentsService {
             .update(concatenated)
             .digest('hex');
 
-        return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(hmac));
+        // timingSafeEqual throws if buffers have different lengths
+        try {
+            return crypto.timingSafeEqual(
+                Buffer.from(computed),
+                Buffer.from(hmac)
+            );
+        } catch {
+            return false;
+        }
     }
 
     async handleWebhook(payload: PaymobWebhookPayload): Promise<void> {
@@ -94,6 +108,16 @@ export class PaymentsService {
         if (!obj.success || obj.pending) {
             this.logger.log(
                 `Paymob transaction ${obj.id} not successful — skipping`
+            );
+            return;
+        }
+
+        // Idempotency guard — Paymob may retry webhooks
+        const idempotencyKey = this.paymobTxKey(obj.id);
+        const alreadyProcessed = await this.cache.exists(idempotencyKey);
+        if (alreadyProcessed) {
+            this.logger.log(
+                `Paymob transaction ${obj.id} already processed — skipping duplicate`
             );
             return;
         }
@@ -115,6 +139,9 @@ export class PaymentsService {
                 paymobOrderId: String(obj.id),
             },
         });
+
+        // Mark transaction as processed in Redis (TTL: 24 hours)
+        await this.cache.set(idempotencyKey, '1', 86400);
 
         this.logger.log(
             `Order ${merchantOrderId} marked as paid (Paymob tx: ${obj.id})`

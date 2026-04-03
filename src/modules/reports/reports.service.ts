@@ -14,7 +14,12 @@ export class ReportsService {
     constructor(private readonly db: DatabaseService) {}
 
     async create(dto: ReportCreateDto): Promise<ReportResponseDto> {
-        return this.db.report.create({ data: dto });
+        return this.db.report.create({
+            data: {
+                ...dto,
+                publishedAt: dto.publishedAt ?? new Date(),
+            },
+        });
     }
 
     async findAll(query: ReportQueryDto): Promise<ReportListResponseDto> {

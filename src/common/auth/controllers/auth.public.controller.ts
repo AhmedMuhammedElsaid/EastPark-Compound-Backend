@@ -8,6 +8,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 import { PublicRoute } from 'src/common/request/decorators/request.public.decorator';
 import { AuthUser } from 'src/common/request/decorators/request.user.decorator';
@@ -33,6 +34,7 @@ import {
 import { AuthService } from '../services/auth.service';
 
 @ApiTags('auth')
+@Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 req/min — stricter than global 100/min
 @Controller({ version: '1', path: '/auth' })
 export class AuthPublicController {
     constructor(private readonly authService: AuthService) {}

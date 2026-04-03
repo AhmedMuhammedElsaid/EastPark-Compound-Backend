@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AnnouncementCategory } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
+    IsDate,
     IsEnum,
     IsNotEmpty,
     IsOptional,
@@ -41,4 +43,13 @@ export class AnnouncementCreateDto {
     @IsUrl()
     @IsOptional()
     pdfUrl?: string;
+
+    @ApiPropertyOptional({
+        description: 'Publish date. Defaults to now if omitted.',
+        example: '2025-06-01T00:00:00.000Z',
+    })
+    @Type(() => Date)
+    @IsDate()
+    @IsOptional()
+    publishedAt?: Date;
 }

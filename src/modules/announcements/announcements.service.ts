@@ -18,7 +18,12 @@ export class AnnouncementsService {
     constructor(private readonly db: DatabaseService) {}
 
     async create(dto: AnnouncementCreateDto): Promise<AnnouncementResponseDto> {
-        return this.db.announcement.create({ data: dto });
+        return this.db.announcement.create({
+            data: {
+                ...dto,
+                publishedAt: dto.publishedAt ?? new Date(),
+            },
+        });
     }
 
     async findAll(
@@ -53,13 +58,14 @@ export class AnnouncementsService {
                         body: true,
                         userId: true,
                         createdAt: true,
+                        user: { select: { id: true, name: true } },
                     },
                 },
             },
         });
         if (!announcement)
             throw new NotFoundException('announcement.error.notFound');
-        return announcement;
+        return announcement as AnnouncementDetailResponseDto;
     }
 
     async addComment(
@@ -75,7 +81,13 @@ export class AnnouncementsService {
 
         return this.db.comment.create({
             data: { body: dto.body, userId: actor.userId, announcementId: id },
-            select: { id: true, body: true, userId: true, createdAt: true },
-        });
+            select: {
+                id: true,
+                body: true,
+                userId: true,
+                createdAt: true,
+                user: { select: { id: true, name: true } },
+            },
+        }) as Promise<CommentResponseDto>;
     }
 }

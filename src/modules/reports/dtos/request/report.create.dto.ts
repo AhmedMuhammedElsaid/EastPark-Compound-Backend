@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsDate, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class ReportCreateDto {
     @ApiProperty({ example: 'Q1 2025 Financial Report' })
@@ -16,4 +17,13 @@ export class ReportCreateDto {
     @IsUrl()
     @IsNotEmpty()
     pdfUrl: string;
+
+    @ApiPropertyOptional({
+        description: 'Publish date. Defaults to now if omitted.',
+        example: '2025-06-01T00:00:00.000Z',
+    })
+    @Type(() => Date)
+    @IsDate()
+    @IsOptional()
+    publishedAt?: Date;
 }

@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     Logger,
@@ -168,6 +169,10 @@ export class ElectionsService {
             include: { candidates: { select: { id: true } } },
         });
         if (!election) throw new NotFoundException('election.error.notFound');
+
+        if (election.expiresAt <= new Date()) {
+            throw new BadRequestException('election.error.expired');
+        }
 
         const validCandidate = election.candidates.some(
             c => c.id === dto.candidateId

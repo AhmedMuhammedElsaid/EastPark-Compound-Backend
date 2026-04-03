@@ -108,7 +108,9 @@ Enter a migration name when prompted (e.g. `init`). Creates all tables from the 
 pnpm seed
 ```
 
-Creates: **`admin@eastpark.local`** / **`Admin@123456`** — safe to re-run (idempotent).
+Creates: **`admin@eastpark.app`** / **`HelloWorld#1234@`** — safe to re-run (idempotent).
+
+> Credentials come from `prisma/sample.json`. Override via env vars `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`.
 
 ### Step 6 — Start the dev server
 
@@ -141,7 +143,7 @@ Hot-reload server starts. Confirm:
 
 | Account | Email | Password |
 |---|---|---|
-| Admin | `admin@eastpark.local` | `Admin@123456` |
+| Admin | `admin@eastpark.app` | `HelloWorld#1234@` |
 | Resident | Register via app + verify OTP | Set during registration |
 | Merchant | Accept invite email (see Mailpit) | Set on accept-invitation screen |
 
@@ -197,9 +199,16 @@ const socket = io('http://localhost:3000/orders', {
   auth: { token: 'your-jwt-access-token' },
 });
 
-socket.on('orderStatusUpdated', (data) => {
-  console.log(data); // { orderId, status, updatedAt }
+// Subscribe to a specific order's updates
+socket.emit('order:join', '<orderId>');
+
+// Listen for status changes
+socket.on('order:status_update', (data) => {
+  console.log(data); // { orderId, status, timestamp }
 });
+
+// Unsubscribe when done
+socket.emit('order:leave', '<orderId>');
 ```
 
 ---

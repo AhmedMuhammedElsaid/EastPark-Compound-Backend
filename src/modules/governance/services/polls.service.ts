@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     NotFoundException,
@@ -126,6 +127,10 @@ export class PollsService {
             include: { options: { select: { id: true } } },
         });
         if (!poll) throw new NotFoundException('poll.error.notFound');
+
+        if (poll.expiresAt <= new Date()) {
+            throw new BadRequestException('poll.error.expired');
+        }
 
         // Check if option belongs to this poll
         const validOption = poll.options.some(o => o.id === dto.optionId);

@@ -8,11 +8,22 @@
 
 ## Status
 
-**All 8 phases + all 6 gaps + wiring fixes: 100% complete. Production-ready.**
+**All 8 phases + all 6 gaps + wiring fixes + post-audit patches: 100% complete. Production-ready.**
 
-Last commit: `eae0da7`. Branch: `main`.
+Last commit: `eae0da7` + post-audit patches. Branch: `main`.
 
 Includes: Auth, shops, products, orders, payments (Paymob), community (announcements, polls, elections, feedback), notifications, invitations, Paymob 3-step initiation + HMAC-SHA512 webhook, Socket.io `/orders` namespace, Expo Push inline, 88% test coverage, Docker Compose, Swagger.
+
+**Post-audit patches applied (2026-04-03):**
+- `AnnouncementCreateDto` / `ReportCreateDto` — added optional `publishedAt` (server defaults to now); fixes DB constraint error on create
+- `PollsService.vote` / `ElectionsService.vote` — rejects votes on expired polls/elections (400 `*.error.expired`)
+- `UserService.deleteUser` — refactored to interactive transaction; now correctly cascades merchant shop data (orders, reviews, savedShops, products, photos) before deleting the user
+- `PaymentsService.handleWebhook` — added Redis idempotency key (`paymob:processed:{txId}`, TTL 24h) to prevent duplicate processing on Paymob retries
+- `PaymentsService.verifyHmac` — wrapped `timingSafeEqual` in try-catch (throws if buffer lengths differ)
+- `AuthPublicController` — added `@Throttle({ default: { limit: 5, ttl: 60000 } })` (5 req/min on all auth routes)
+- `RequestModule.ThrottlerModule` — fixed TTL from 60ms → 60 000ms (v6 uses milliseconds)
+- `AnnouncementsService` — comments now include `user: { id, name }` for display; `CommentResponseDto` updated accordingly
+- Docs: GUIDE.md OTP TTL 5min → 10min; HOWTORUN.md admin credentials corrected; WebSocket event name corrected (`orderStatusUpdated` → `order:status_update`)
 
 **Remaining user actions (manual — require external accounts):**
 1. `fly secrets set PAYMOB_INTEGRATION_ID=<val> PAYMOB_IFRAME_ID=<val>` from this directory

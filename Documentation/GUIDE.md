@@ -44,7 +44,7 @@ NestJS Server (port 3000)
 - **What:** Stores things that expire — OTP codes, password reset tokens, rate-limit counters, and the list of "logged out" JWT tokens (blacklist).
 - **Port:** `6379`
 - **TTLs (time-to-live):**
-  - OTP code: 5 minutes — after that it's gone, user must request again
+  - OTP code: 10 minutes — after that it's gone, user must request again
   - Password reset token: 30 minutes
   - Logged-out JWT: 15 minutes (access token lifespan)
 - **You don't interact with Redis manually** — the app handles it automatically.

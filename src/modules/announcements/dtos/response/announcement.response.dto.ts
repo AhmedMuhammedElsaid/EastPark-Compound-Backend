@@ -1,10 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AnnouncementCategory } from '@prisma/client';
 
+export class CommentAuthorDto {
+    @ApiProperty() id: string;
+    @ApiProperty() name: string;
+}
+
 export class CommentResponseDto {
     @ApiProperty() id: string;
     @ApiProperty() body: string;
     @ApiProperty() userId: string;
+    @ApiProperty({ type: () => CommentAuthorDto }) user: CommentAuthorDto;
     @ApiProperty() createdAt: Date;
 }
 

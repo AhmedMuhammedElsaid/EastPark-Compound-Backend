@@ -14,8 +14,10 @@ import { RequestLoggerMiddleware } from './middlewares/request.middleware';
             useFactory: (configService: ConfigService) => ({
                 throttlers: [
                     {
+                        // @nestjs/throttler v6 uses milliseconds — multiply config seconds by 1000
                         ttl:
-                            configService.get<number>('app.throttle.ttl') ?? 60,
+                            (configService.get<number>('app.throttle.ttl') ??
+                                60) * 1000,
                         limit:
                             configService.get<number>('app.throttle.limit') ??
                             100,

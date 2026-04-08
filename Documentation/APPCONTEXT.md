@@ -25,10 +25,11 @@ Includes: Auth, shops, products, orders, payments (Paymob), community (announcem
 - `AnnouncementsService` — comments now include `user: { id, name }` for display; `CommentResponseDto` updated accordingly
 - Docs: GUIDE.md OTP TTL 5min → 10min; HOWTORUN.md admin credentials corrected; WebSocket event name corrected (`orderStatusUpdated` → `order:status_update`)
 
-**Seed + tooling fixes (2026-04-08):**
-- `seed.ts`: fixed poll/election TypeScript type inference; uniqueness checks on email AND phone before creating residents/merchants
-- `sample.json`: `deliveryTime` corrected from string → int
-- `seed-data.ts`: admin creation made idempotent
+**Seed consolidation (2026-04-08):**
+- `sample.json` and `seed.ts` deleted — single seed file is now `prisma/seed-data.ts`
+- `pnpm seed` → `seed-data.ts` (idempotent; skips if merchants already exist)
+- Rich dataset: 5 merchants · 8 residents · 5 shops · 42 products · 14 orders · 8 announcements · 3 polls · 1 election · 8 feedback items
+- Admin creation made idempotent in `seed-data.ts`
 - New doc: `Documentation/WSL_NETWORKING.md` — explains WSL2 NAT, portproxy setup, and full phone→backend request flow
 
 **Remaining user actions (manual — require external accounts):**

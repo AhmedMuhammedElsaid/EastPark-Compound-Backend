@@ -43,7 +43,7 @@ All reference files live in `Documentation/` — read these before exploring the
 | Email | `admin@eastpark.app` |
 | Password | `HelloWorld#1234@` |
 
-Defined in `prisma/seed.ts` (overridable via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` env vars). Re-run `pnpm seed` is idempotent — skips if admin already exists.
+Defined in `prisma/seed-data.ts` (overridable via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` env vars). Re-run `pnpm seed` is idempotent — skips if merchants already exist.
 
 ---
 
@@ -55,6 +55,41 @@ Defined in `prisma/seed.ts` (overridable via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PA
 | Resident | POST /auth/register → POST /auth/verify-otp → verified |
 | Merchant | Admin sends email invite → one-time token → POST /auth/accept-invitation |
 | Admin | Admin sends email invite → one-time token → POST /auth/accept-invitation |
+
+---
+
+## Seed Data
+
+Single seed file: `prisma/seed-data.ts`. `sample.json` and `seed.ts` have been deleted.
+
+```bash
+pnpm prisma:reset   # wipe DB (destructive)
+pnpm seed           # seeds everything; skips if merchants already exist (idempotent)
+```
+
+**What gets seeded:**
+
+| Entity | Count | Detail |
+|---|---|---|
+| Users | 14 | 1 admin · 5 merchants · 8 residents |
+| Shops | 5 | café · grocery · butcher · services · health |
+| Products | 42 | 8–10 per shop |
+| Orders | 14 | all statuses: PLACED → DELIVERED, one CANCELLED |
+| Reviews | 16 | every shop has 2–4 reviews |
+| Announcements | 8 | mix of GENERAL / EVENT / MAINTENANCE / NEWS / PROMOTION |
+| Reports | 5 | quarterly financial + maintenance + security |
+| Polls | 3 | 18 votes across 8 residents |
+| Election | 1 | 3 candidates, 6 votes |
+| Feedback | 8 | 5 admin replies |
+| Notifications | 15 | across all types |
+
+**Test credentials:**
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@eastpark.app` | `HelloWorld#1234@` |
+| Merchants | `merchant1–5@eastpark.app` | `Merchant#1234@` |
+| Residents | `resident1–8@eastpark.app` | `Resident#1234@` |
 
 ---
 

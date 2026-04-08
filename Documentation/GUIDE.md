@@ -411,7 +411,7 @@ The `pnpm seed` command creates the first admin user (idempotent — safe to re-
 - **Email:** `admin@eastpark.app`
 - **Password:** `HelloWorld#1234@`
 
-This is defined in `prisma/seed.ts`. You can edit that file to also seed test shops, products, or residents for development.
+This is defined in `prisma/seed-data.ts`. Edit that file to add more test users, shops, products, or orders. Run `pnpm prisma:reset && pnpm seed` to apply a fresh seed.
 
 ---
 

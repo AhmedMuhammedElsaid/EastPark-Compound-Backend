@@ -110,7 +110,7 @@ pnpm seed
 
 Creates: **`admin@eastpark.app`** / **`HelloWorld#1234@`** — safe to re-run (idempotent).
 
-> Credentials come from `prisma/sample.json`. Override via env vars `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`.
+> Credentials come from `prisma/seed-data.ts`. Override via env vars `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`.
 
 ### Step 6 — Start the dev server
 

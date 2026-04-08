@@ -28,7 +28,7 @@
       "category": "CAFE_AND_FOOD",
       "isOpen": true,
       "phone": "+201556789012",
-      "deliveryTime": "20-30 min",
+      "deliveryTime": 25,
       "workingHours": {
         "mon": { "open": "08:00", "close": "22:00", "closed": false },
         "tue": { "open": "08:00", "close": "22:00", "closed": false },
@@ -58,7 +58,7 @@
       "category": "GROCERY",
       "isOpen": true,
       "phone": "+201023456789",
-      "deliveryTime": "30-45 min",
+      "deliveryTime": 38,
       "workingHours": {
         "mon": { "open": "08:00", "close": "22:00", "closed": false },
         "tue": { "open": "08:00", "close": "22:00", "closed": false },

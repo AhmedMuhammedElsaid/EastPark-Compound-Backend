@@ -24,9 +24,25 @@ async function main() {
         return;
     }
 
-    const admin = await db.user.findFirstOrThrow({
-        where: { role: Role.ADMIN },
-    });
+    // ── Admin ──────────────────────────────────────────────────────────────────
+    const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@eastpark.app';
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'HelloWorld#1234@';
+    let admin = await db.user.findUnique({ where: { email: adminEmail } });
+    if (!admin) {
+        admin = await db.user.create({
+            data: {
+                name: process.env.SEED_ADMIN_NAME ?? 'EastPark Admin',
+                email: adminEmail,
+                passwordHash: await argon2.hash(adminPassword),
+                role: Role.ADMIN,
+                isVerified: true,
+                unitNumber: 'ADMIN-01',
+            },
+        });
+        console.log(`✓ Admin: ${admin.email}`);
+    } else {
+        console.log(`· Admin already exists: ${admin.email}`);
+    }
 
     const mp = await argon2.hash('Merchant#1234@');
     const rp = await argon2.hash('Resident#1234@');
@@ -150,17 +166,6 @@ async function main() {
                 unitNumber: 'C301',
                 passwordHash: rp,
                 role: Role.RESIDENT,
-                isVerified: true,
-            },
-        }),
-        db.user.create({
-            data: {
-                name: 'Nourhan',
-                email: 'nourhan@eastpark.app',
-                phone: '+201001234006',
-                unitNumber: 'C302',
-                passwordHash: rp,
-                role: Role.ADMIN,
                 isVerified: true,
             },
         }),

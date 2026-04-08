@@ -20,7 +20,7 @@ All reference files live in `Documentation/` — read these before exploring the
 
 ## Status
 
-✅ All 8 phases + all 6 gaps + wiring fixes + production audit patches complete. Running locally since 2026-04-02. Branch: main. Last commit: `138fc94`.
+✅ All 8 phases + all 6 gaps + wiring fixes + 2 full audit passes complete. Running locally since 2026-04-02. Branch: main. Last commit: `c7dfb01`.
 
 ---
 
@@ -159,7 +159,7 @@ orderBy: { createdAt: 'desc' },
 
 **Response format.** DocResponse interceptor wraps all responses: `{ success: true, message: 'i18n.key', data: ... }`.
 
-**OTP / reset tokens.** Stored in Redis with TTL. OTP: 5min. Reset token: 30min.
+**OTP / reset tokens.** Stored in Redis with TTL. OTP: 10min (`OTP_TTL = 600`). Reset token: 30min.
 
 **Paymob flow:**
 1. `POST /v1/orders/:id/pay/paymob` [RESIDENT] → auth token → register order → payment key (all via Paymob API)
@@ -170,7 +170,13 @@ orderBy: { createdAt: 'desc' },
 
 **Product soft-delete.** `isDeleted: Boolean @default(false)`. Always `where: { isDeleted: false }` on queries.
 
-**Shop photos.** `ShopPhoto.order: Int` — always `orderBy: { order: 'asc' }`. FE uses `photos[0]` as cover.
+**Shop photos.** `ShopPhoto.order: Int` — always `orderBy: { order: 'asc' }`. Service derives `isPrimary: index === 0` from sorted array. FE uses `photo.isPrimary` to find the cover.
+
+**Auth responses.** `passwordHash` and `pushToken` are always stripped from user objects in `verifyOtp`, `login`, and `acceptInvitation` before returning `{ ...tokens, user }`.
+
+**Photo ownership.** `addPhoto` / `removePhoto` enforce `shop.merchantId === actor.userId` for MERCHANT role. ADMINs bypass this check.
+
+**Feedback access.** `GET /feedback/:id` — only ADMIN can read any feedback; all other roles are restricted to their own submissions.
 
 **Anonymous feedback.** Strip `userId`/`author` from response when `isAnonymous: true`.
 

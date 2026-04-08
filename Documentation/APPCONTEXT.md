@@ -10,7 +10,7 @@
 
 **All 8 phases + all 6 gaps + wiring fixes + post-audit patches: 100% complete. Production-ready.**
 
-Last commit: `138fc94`. Branch: `main`.
+Last commit: `c7dfb01`. Branch: `main`.
 
 Includes: Auth, shops, products, orders, payments (Paymob), community (announcements, polls, elections, feedback), notifications, invitations, Paymob 3-step initiation + HMAC-SHA512 webhook, Socket.io `/orders` namespace, Expo Push inline, 88% test coverage, Docker Compose, Swagger.
 
@@ -31,6 +31,16 @@ Includes: Auth, shops, products, orders, payments (Paymob), community (announcem
 - Rich dataset: 5 merchants · 8 residents · 5 shops · 42 products · 14 orders · 8 announcements · 3 polls · 1 election · 8 feedback items
 - Admin creation made idempotent in `seed-data.ts`
 - New doc: `Documentation/WSL_NETWORKING.md` — explains WSL2 NAT, portproxy setup, and full phone→backend request flow
+
+**Security & logic audit 2 (2026-04-08) — commit `c7dfb01`:**
+- `AuthService.verifyOtp/login/acceptInvitation` — `passwordHash` + `pushToken` were returned raw in every auth response; now destructured out before returning `{ ...tokens, user }`
+- `ShopsService.addPhoto/removePhoto` — no ownership check; any MERCHANT could modify any shop's photos; ownership enforced (`shop.merchantId === actor.userId`) for MERCHANT role
+- `FeedbackService.findOne` — MERCHANT role could read any user's feedback; guard changed from `role === RESIDENT` to `role !== ADMIN`
+- `ReviewsController GET /shops/:shopId/reviews` — missing `@PublicRoute()`, required auth; unauthenticated users got 401; fixed
+- `PaymentsService.initiatePayment` — no guard against initiating Paymob on a CASH order; `paymentMethod !== PAYMOB` check added
+- `PaymentsService.handleWebhook` — duplicate Paymob transaction (different `obj.id`) could re-mark an already-paid order; `if (order.isPaid) return` guard added
+- `ShopsService.findAll/update` — `averageRating` was always `null`; `findAll` now does a single batch `groupBy` after fetching shops; `update` does `aggregate` after save
+- `ShopPhotoResponseDto` — `isPrimary: boolean` added; derived in service as `index === 0` on the already-sorted photo array
 
 **Remaining user actions (manual — require external accounts):**
 1. `fly secrets set PAYMOB_INTEGRATION_ID=<val> PAYMOB_IFRAME_ID=<val>` from this directory

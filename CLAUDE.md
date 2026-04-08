@@ -14,16 +14,17 @@ All reference files live in `Documentation/` — read these before exploring the
 | `Documentation/GUIDE.md` | Architecture, tech map, DB relationships, auth flow, file uploads, real-time, how to make changes |
 | `Documentation/APPCONTEXT.md` | Full tech stack, all API routes, domain rules, all locked decisions |
 | `Documentation/HOWTORUN.md` | Local dev setup, all pnpm commands, Docker services, troubleshooting |
+| `Documentation/WSL_NETWORKING.md` | WSL2 NAT explained, portproxy setup, why WSL IP changes, full phone→backend request flow |
 
 ---
 
 ## Status
 
-✅ All 8 phases + all 6 gaps + wiring fixes complete. Running locally since 2026-04-02. Branch: main.
+✅ All 8 phases + all 6 gaps + wiring fixes + production audit patches complete. Running locally since 2026-04-02. Branch: main. Last commit: `138fc94`.
 
 ---
 
-## Local Dev State (as of 2026-04-02)
+## Local Dev State (as of 2026-04-08)
 
 - **Docker services:** postgres + redis + mailpit + minio — all running (`pnpm docker:up`)
 - **Database:** schema pushed via `prisma db push` (no initial migration — only one migration existed and was incomplete)

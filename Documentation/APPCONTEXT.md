@@ -10,7 +10,7 @@
 
 **All 8 phases + all 6 gaps + wiring fixes + post-audit patches: 100% complete. Production-ready.**
 
-Last commit: `eae0da7` + post-audit patches. Branch: `main`.
+Last commit: `138fc94`. Branch: `main`.
 
 Includes: Auth, shops, products, orders, payments (Paymob), community (announcements, polls, elections, feedback), notifications, invitations, Paymob 3-step initiation + HMAC-SHA512 webhook, Socket.io `/orders` namespace, Expo Push inline, 88% test coverage, Docker Compose, Swagger.
 
@@ -24,6 +24,12 @@ Includes: Auth, shops, products, orders, payments (Paymob), community (announcem
 - `RequestModule.ThrottlerModule` — fixed TTL from 60ms → 60 000ms (v6 uses milliseconds)
 - `AnnouncementsService` — comments now include `user: { id, name }` for display; `CommentResponseDto` updated accordingly
 - Docs: GUIDE.md OTP TTL 5min → 10min; HOWTORUN.md admin credentials corrected; WebSocket event name corrected (`orderStatusUpdated` → `order:status_update`)
+
+**Seed + tooling fixes (2026-04-08):**
+- `seed.ts`: fixed poll/election TypeScript type inference; uniqueness checks on email AND phone before creating residents/merchants
+- `sample.json`: `deliveryTime` corrected from string → int
+- `seed-data.ts`: admin creation made idempotent
+- New doc: `Documentation/WSL_NETWORKING.md` — explains WSL2 NAT, portproxy setup, and full phone→backend request flow
 
 **Remaining user actions (manual — require external accounts):**
 1. `fly secrets set PAYMOB_INTEGRATION_ID=<val> PAYMOB_IFRAME_ID=<val>` from this directory

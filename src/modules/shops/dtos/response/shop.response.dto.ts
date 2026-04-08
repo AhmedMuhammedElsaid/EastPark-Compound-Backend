@@ -5,6 +5,7 @@ export class ShopPhotoResponseDto {
     @ApiProperty() id: string;
     @ApiProperty() url: string;
     @ApiProperty() order: number;
+    @ApiProperty() isPrimary: boolean;
 }
 
 export class ShopResponseDto {

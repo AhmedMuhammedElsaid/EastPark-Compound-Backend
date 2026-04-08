@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Query
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
+import { PublicRoute } from 'src/common/request/decorators/request.public.decorator';
 import { AllowedRoles } from 'src/common/request/decorators/request.role.decorator';
 import { AuthUser } from 'src/common/request/decorators/request.user.decorator';
 import { IAuthUser } from 'src/common/request/interfaces/request.interface';
@@ -17,6 +18,7 @@ export class ReviewsController {
     constructor(private readonly reviewsService: ReviewsService) {}
 
     @Get()
+    @PublicRoute()
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'List reviews for a shop (public)' })
     findAll(

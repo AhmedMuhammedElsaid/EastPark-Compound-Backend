@@ -87,24 +87,26 @@ export class ShopsController {
     @AllowedRoles([Role.MERCHANT, Role.ADMIN])
     @ApiBearerAuth('accessToken')
     @ApiOperation({
-        summary: 'Add photo to shop (URL from /uploads/image) [MERCHANT/ADMIN]',
+        summary: 'Add photo to shop (URL from /uploads/image) [MERCHANT(own)/ADMIN]',
     })
     addPhoto(
         @Param('id') id: string,
-        @Body() dto: ShopAddPhotoDto
+        @Body() dto: ShopAddPhotoDto,
+        @AuthUser() actor: IAuthUser
     ): Promise<ShopResponseDto> {
-        return this.shopsService.addPhoto(id, dto.url, dto.order ?? 0);
+        return this.shopsService.addPhoto(id, dto.url, dto.order ?? 0, actor);
     }
 
     @Delete(':id/photos/:photoId')
     @AllowedRoles([Role.MERCHANT, Role.ADMIN])
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiBearerAuth('accessToken')
-    @ApiOperation({ summary: 'Delete shop photo [MERCHANT/ADMIN]' })
+    @ApiOperation({ summary: 'Delete shop photo [MERCHANT(own)/ADMIN]' })
     removePhoto(
         @Param('id') id: string,
-        @Param('photoId') photoId: string
+        @Param('photoId') photoId: string,
+        @AuthUser() actor: IAuthUser
     ): Promise<void> {
-        return this.shopsService.removePhoto(id, photoId);
+        return this.shopsService.removePhoto(id, photoId, actor);
     }
 }

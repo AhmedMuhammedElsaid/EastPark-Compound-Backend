@@ -38,7 +38,12 @@ export class ShopsService {
                 _count: { select: { reviews: true } },
             },
         });
-        return { ...shop, reviewCount: shop._count.reviews, averageRating: null };
+        return {
+            ...shop,
+            photos: shop.photos.map((photo, i) => ({ ...photo, isPrimary: i === 0 })),
+            reviewCount: shop._count.reviews,
+            averageRating: null,
+        };
     }
 
     async findAll(query: ShopQueryDto): Promise<ShopListResponseDto> {
@@ -81,11 +86,21 @@ export class ShopsService {
             nextCursor = last?.id;
         }
 
+        // Batch-fetch average ratings for all shops in one query
+        const shopIds = items.map(s => s.id);
+        const ratingRows = await this.db.review.groupBy({
+            by: ['shopId'],
+            where: { shopId: { in: shopIds } },
+            _avg: { rating: true },
+        });
+        const ratingMap = new Map(ratingRows.map(r => [r.shopId, r._avg.rating]));
+
         return {
             items: items.map((shop) => ({
                 ...shop,
+                photos: shop.photos.map((photo, i) => ({ ...photo, isPrimary: i === 0 })),
                 reviewCount: shop._count.reviews,
-                averageRating: null,
+                averageRating: ratingMap.get(shop.id) ?? null,
             })),
             nextCursor,
         };
@@ -106,7 +121,12 @@ export class ShopsService {
             }),
         ]);
         if (!shop) throw new NotFoundException('shop.error.notFound');
-        return { ...shop, reviewCount: shop._count.reviews, averageRating: aggregate._avg.rating };
+        return {
+            ...shop,
+            photos: shop.photos.map((photo, i) => ({ ...photo, isPrimary: i === 0 })),
+            reviewCount: shop._count.reviews,
+            averageRating: aggregate._avg.rating,
+        };
     }
 
     async update(
@@ -142,7 +162,16 @@ export class ShopsService {
                 _count: { select: { reviews: true } },
             },
         });
-        return { ...updated, reviewCount: updated._count.reviews, averageRating: null };
+        const aggregate = await this.db.review.aggregate({
+            where: { shopId: id },
+            _avg: { rating: true },
+        });
+        return {
+            ...updated,
+            photos: updated.photos.map((photo, i) => ({ ...photo, isPrimary: i === 0 })),
+            reviewCount: updated._count.reviews,
+            averageRating: aggregate._avg.rating,
+        };
     }
 
     async remove(id: string): Promise<void> {
@@ -154,22 +183,30 @@ export class ShopsService {
     async addPhoto(
         shopId: string,
         url: string,
-        order: number
+        order: number,
+        actor: IAuthUser
     ): Promise<ShopResponseDto> {
         const shop = await this.db.shop.findUnique({ where: { id: shopId } });
         if (!shop) throw new NotFoundException('shop.error.notFound');
+        if (actor.role === Role.MERCHANT && shop.merchantId !== actor.userId) {
+            throw new ForbiddenException('shop.error.forbidden');
+        }
 
         await this.db.shopPhoto.create({ data: { shopId, url, order } });
 
         return this.findOne(shopId);
     }
 
-    async removePhoto(shopId: string, photoId: string): Promise<void> {
+    async removePhoto(shopId: string, photoId: string, actor: IAuthUser): Promise<void> {
         const photo = await this.db.shopPhoto.findUnique({
             where: { id: photoId },
+            include: { shop: { select: { merchantId: true } } },
         });
         if (!photo || photo.shopId !== shopId) {
             throw new NotFoundException('shop.error.photoNotFound');
+        }
+        if (actor.role === Role.MERCHANT && photo.shop.merchantId !== actor.userId) {
+            throw new ForbiddenException('shop.error.forbidden');
         }
         await this.db.shopPhoto.delete({ where: { id: photoId } });
     }

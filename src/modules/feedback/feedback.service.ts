@@ -97,8 +97,8 @@ export class FeedbackService {
 
         if (!feedback) throw new NotFoundException('feedback.error.notFound');
 
-        // Residents can only see their own
-        if (actor.role === Role.RESIDENT && feedback.userId !== actor.userId) {
+        // Only admins can see any feedback — all other roles are limited to their own
+        if (actor.role !== Role.ADMIN && feedback.userId !== actor.userId) {
             throw new ForbiddenException('feedback.error.forbidden');
         }
 

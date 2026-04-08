@@ -94,7 +94,8 @@ export class AuthService {
             userId: user.id,
             role: user.role,
         });
-        return { ...tokens, user };
+        const { passwordHash: _h, pushToken: _p, ...safeUser } = user;
+        return { ...tokens, user: safeUser };
     }
 
     // ── Resend OTP ────────────────────────────────────────────────────────────
@@ -133,7 +134,8 @@ export class AuthService {
             userId: user.id,
             role: user.role,
         });
-        return { ...tokens, user };
+        const { passwordHash: _h, pushToken: _p, ...safeUser } = user;
+        return { ...tokens, user: safeUser };
     }
 
     // ── Refresh ───────────────────────────────────────────────────────────────
@@ -255,7 +257,8 @@ export class AuthService {
             userId: user.id,
             role: user.role,
         });
-        return { ...tokens, user };
+        const { passwordHash: _h, pushToken: _p, ...safeUser } = user;
+        return { ...tokens, user: safeUser };
     }
 
     // ── Push Token ────────────────────────────────────────────────────────────

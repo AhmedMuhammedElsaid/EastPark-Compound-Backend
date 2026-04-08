@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'node:crypto';
+import { PaymentMethod } from '@prisma/client';
 
 import { CacheService } from 'src/common/cache/services/cache.service';
 import { DatabaseService } from 'src/common/database/services/database.service';
@@ -132,6 +133,13 @@ export class PaymentsService {
         });
         if (!order) throw new NotFoundException('payments.error.orderNotFound');
 
+        // Idempotency — skip if already paid (e.g. duplicate Paymob transaction)
+        if (order.isPaid) {
+            await this.cache.set(idempotencyKey, '1', 86400);
+            this.logger.log(`Order ${merchantOrderId} already paid — skipping duplicate webhook`);
+            return;
+        }
+
         await this.db.order.update({
             where: { id: merchantOrderId },
             data: {
@@ -158,6 +166,8 @@ export class PaymentsService {
         });
         if (!order) throw new NotFoundException('order.error.notFound');
         if (order.residentId !== actorId) throw new ForbiddenException();
+        if (order.paymentMethod !== PaymentMethod.PAYMOB)
+            throw new BadRequestException('order.error.notPaymobOrder');
 
         const apiKey        = this.config.getOrThrow<string>('paymob.apiKey');
         const integrationId = this.config.getOrThrow<string>('paymob.integrationId');

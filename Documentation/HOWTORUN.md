@@ -57,22 +57,35 @@ pnpm install
 cp .env.example .env
 ```
 
-Open `.env` and generate the two JWT secrets — every other value works as-is for local dev:
+Open `.env` and fill in the required values:
 
 ```bash
+# 1. Generate two different JWT secrets:
 openssl rand -base64 48   # copy output → AUTH_ACCESS_TOKEN_SECRET
 openssl rand -base64 48   # copy output → AUTH_REFRESH_TOKEN_SECRET (must differ)
+
+# 2. Set local service passwords (used by docker-compose):
+POSTGRES_PASSWORD="<choose-a-password>"
+MINIO_ROOT_PASSWORD="<choose-a-password>"
+
+# 3. Paste POSTGRES_PASSWORD into DATABASE_URL:
+DATABASE_URL="postgresql://postgres:<your-password>@localhost:5432/eastpark?schema=public"
+
+# 4. Set SUPABASE_SERVICE_KEY to the same value as MINIO_ROOT_PASSWORD (MinIO auth for dev)
+
+# 5. Set seed passwords for test accounts:
+SEED_ADMIN_PASSWORD="<choose-a-password>"
+SEED_MERCHANT_PASSWORD="<choose-a-password>"
+SEED_RESIDENT_PASSWORD="<choose-a-password>"
 ```
 
-Key defaults already correct in `.env.example`:
+Everything else has sensible defaults for local dev. Key defaults in `.env.example`:
 
 | Variable | Dev Default |
 |---|---|
-| `DATABASE_URL` | `postgresql://postgres:master123@localhost:5432/eastpark` |
 | `REDIS_URL` | `redis://localhost:6379` |
 | `SMTP_HOST` / `SMTP_PORT` | `localhost` / `1025` (Mailpit) |
-| `SUPABASE_URL` | `http://localhost:9000` (MinIO) |
-| `SUPABASE_SERVICE_KEY` | `minioadmin` |
+| `SUPABASE_URL` | `http://localhost:9002` (MinIO) |
 | `SUPABASE_BUCKET` | `eastpark-uploads` |
 | `HTTP_PORT` | `3000` |
 
@@ -108,7 +121,7 @@ Enter a migration name when prompted (e.g. `init`). Creates all tables from the 
 pnpm seed
 ```
 
-Creates: **`admin@eastpark.app`** / **`HelloWorld#1234@`** — safe to re-run (idempotent).
+Creates the admin user — safe to re-run (idempotent). Password is set via `SEED_ADMIN_PASSWORD` env var.
 
 > Credentials come from `prisma/seed-data.ts`. Override via env vars `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`.
 
@@ -134,7 +147,7 @@ Hot-reload server starts. Confirm:
 | `http://localhost:3000/docs` | Swagger UI — interactive API explorer |
 | `ws://localhost:3000/orders` | WebSocket namespace for real-time order updates |
 | `http://localhost:8025` | Mailpit — view all outbound emails (OTP, invites, reset links) |
-| `http://localhost:9001` | MinIO Console — browse uploaded files (`minioadmin` / `minioadmin`) |
+| `http://localhost:9001` | MinIO Console — browse uploaded files (credentials in `.env`) |
 | `http://localhost:5555` | Prisma Studio — visual DB browser (`pnpm prisma:studio`) |
 
 ---
@@ -143,7 +156,7 @@ Hot-reload server starts. Confirm:
 
 | Account | Email | Password |
 |---|---|---|
-| Admin | `admin@eastpark.app` | `HelloWorld#1234@` |
+| Admin | `admin@eastpark.app` | Set via `SEED_ADMIN_PASSWORD` env var |
 | Resident | Register via app + verify OTP | Set during registration |
 | Merchant | Accept invite email (see Mailpit) | Set on accept-invitation screen |
 

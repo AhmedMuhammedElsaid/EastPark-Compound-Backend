@@ -141,7 +141,7 @@ echo -e "  ${CYAN}API${RESET}         http://localhost:3000/v1"
 echo -e "  ${CYAN}Swagger${RESET}     http://localhost:3000/docs"
 echo -e "  ${CYAN}WebSocket${RESET}   ws://localhost:3000/orders"
 echo -e "  ${CYAN}Mailpit${RESET}     http://localhost:8025"
-echo -e "  ${CYAN}MinIO${RESET}       http://localhost:9001  (minioadmin / minioadmin)"
+echo -e "  ${CYAN}MinIO${RESET}       http://localhost:9001  (credentials in .env)"
 echo -e "  ${CYAN}Prisma${RESET}      pnpm prisma:studio      → http://localhost:5555"
 echo -e ""
 

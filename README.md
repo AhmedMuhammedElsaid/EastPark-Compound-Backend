@@ -85,22 +85,28 @@ cp .env.example .env
 Open `.env` and fill in at minimum:
 
 ```env
-# These already have good defaults for local Docker dev — change only if needed
-DATABASE_URL="postgresql://postgres:master123@localhost:5432/eastpark?schema=public"
-REDIS_URL="redis://localhost:6379"
-SMTP_HOST="localhost"
-SMTP_PORT=1025
-SUPABASE_URL="http://localhost:9000"
-SUPABASE_SERVICE_KEY="minioadmin"
-SUPABASE_BUCKET="eastpark-uploads"
-
-# Generate two different secrets:
+# Generate two different secrets (required):
 #   openssl rand -base64 48
-AUTH_ACCESS_TOKEN_SECRET="<generate>"
-AUTH_REFRESH_TOKEN_SECRET="<generate-different>"
+AUTH_ACCESS_TOKEN_SECRET="<paste-generated-secret>"
+AUTH_REFRESH_TOKEN_SECRET="<paste-different-secret>"
 
-# Paymob — leave empty for local (webhook endpoint won't be called)
-PAYMOB_HMAC_SECRET=""
+# Docker service passwords (required — no defaults):
+POSTGRES_PASSWORD="<choose-a-password>"
+MINIO_ROOT_PASSWORD="<choose-a-password>"
+
+# Paste POSTGRES_PASSWORD into DATABASE_URL:
+DATABASE_URL="postgresql://postgres:<your-password>@localhost:5432/eastpark?schema=public"
+
+# Set SUPABASE_SERVICE_KEY to the same value as MINIO_ROOT_PASSWORD:
+SUPABASE_SERVICE_KEY="<same-as-MINIO_ROOT_PASSWORD>"
+
+# Set seed passwords for local dev accounts:
+SEED_ADMIN_PASSWORD="<choose-a-password>"
+SEED_MERCHANT_PASSWORD="<choose-a-password>"
+SEED_RESIDENT_PASSWORD="<choose-a-password>"
+
+# Everything else has sensible defaults for local Docker dev.
+# See .env.example for all variables and inline documentation.
 ```
 
 ### 3 — Start local services
@@ -128,10 +134,10 @@ docker-compose ps
 # Create the database schema
 pnpm prisma:migrate
 
-# Seed the first admin user
+# Seed dev users (admin, merchants, residents)
 pnpm seed
-# → admin@eastpark.app / Admin@123456
-# Change this password after first login!
+# Credentials are set via SEED_ADMIN_PASSWORD, SEED_MERCHANT_PASSWORD,
+# SEED_RESIDENT_PASSWORD in your .env file.
 ```
 
 ### 5 — Start the API
@@ -171,7 +177,7 @@ Full reference is in `.env.example`. Every variable is documented with inline co
 | `SMTP_PASS` | Prod | Brevo SMTP key |
 | `EMAIL_FROM` | Yes | Sender address |
 | `SUPABASE_URL` | Yes | `http://localhost:9000` (dev MinIO) · Supabase project URL (prod) |
-| `SUPABASE_SERVICE_KEY` | Yes | `minioadmin` (dev) · Supabase service role key (prod) |
+| `SUPABASE_SERVICE_KEY` | Yes | MinIO root password (dev) · Supabase service role key (prod) |
 | `SUPABASE_BUCKET` | Yes | `eastpark-uploads` |
 | `PAYMOB_API_KEY` | Prod | Paymob API key |
 | `PAYMOB_HMAC_SECRET` | Prod | Used for webhook HMAC-SHA512 verification |

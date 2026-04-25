@@ -28,7 +28,7 @@ All reference files live in `Documentation/` — read these before exploring the
 
 - **Docker services:** postgres + redis + mailpit + minio — all running (`pnpm docker:up`)
 - **Database:** schema pushed via `prisma db push` (no initial migration — only one migration existed and was incomplete)
-- **Admin seeded:** `admin@eastpark.app` / `HelloWorld#1234@`
+- **Admin seeded:** `admin@eastpark.app` (password set via `SEED_ADMIN_PASSWORD` env var)
 - **`@fastify/static` installed** — required by SwaggerModule with Fastify adapter
 - **Swagger fix applied** — `@ApiParam` added to `PUT /notifications/preferences/:type` to fix circular dep on `NotificationType` enum
 
@@ -41,7 +41,7 @@ All reference files live in `Documentation/` — read these before exploring the
 | Field | Value |
 |---|---|
 | Email | `admin@eastpark.app` |
-| Password | `HelloWorld#1234@` |
+| Password | Set via `SEED_ADMIN_PASSWORD` env var |
 
 Defined in `prisma/seed-data.ts` (overridable via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` env vars). Re-run `pnpm seed` is idempotent — skips if merchants already exist.
 
@@ -85,11 +85,13 @@ pnpm seed           # seeds everything; skips if merchants already exist (idempo
 
 **Test credentials:**
 
-| Role | Email | Password |
-|---|---|---|
-| Admin | `admin@eastpark.app` | `HelloWorld#1234@` |
-| Merchants | `merchant1–5@eastpark.app` | `Merchant#1234@` |
-| Residents | `resident1–8@eastpark.app` | `Resident#1234@` |
+All seed passwords are set via environment variables: `SEED_ADMIN_PASSWORD`, `SEED_MERCHANT_PASSWORD`, `SEED_RESIDENT_PASSWORD`. See `.env.example`.
+
+| Role | Email |
+|---|---|
+| Admin | `admin@eastpark.app` |
+| Merchants | `merchant1–5@eastpark.app` |
+| Residents | `resident1–8@eastpark.app` |
 
 ---
 
@@ -229,7 +231,7 @@ pnpm dev          # NestJS hot-reload on http://localhost:3000/v1
 |---|---|
 | http://localhost:3000/docs | Swagger UI |
 | http://localhost:8025 | Mailpit (emails) |
-| http://localhost:9001 | MinIO console (`minioadmin` / `minioadmin`) |
+| http://localhost:9001 | MinIO console (credentials in `.env`) |
 | http://localhost:5555 | Prisma Studio (`pnpm prisma:studio`) |
 
 ---

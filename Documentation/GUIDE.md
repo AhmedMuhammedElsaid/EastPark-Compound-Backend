@@ -36,7 +36,7 @@ NestJS Server (port 3000)
 ### PostgreSQL — The Main Database
 - **What:** Stores all permanent data — users, shops, orders, polls, everything.
 - **Port:** `5432`
-- **Credentials:** user `postgres`, password `master123`, database `eastpark`
+- **Credentials:** user `postgres`, password from `POSTGRES_PASSWORD` env var (see `docker-compose.yml`), database `eastpark`
 - **You interact with it via:** Prisma (never write raw SQL in the code)
 - **Visual browser:** `pnpm prisma:studio` → opens at `http://localhost:5555`
 
@@ -52,7 +52,7 @@ NestJS Server (port 3000)
 ### MinIO — File Storage
 - **What:** Stores all uploaded files (shop photos, product images, PDF reports). Acts like Amazon S3 but runs locally on your machine.
 - **Ports:** `9002` (S3 API the server uses), `9001` (Console UI for you)
-- **Console:** `http://localhost:9001` — login with `minioadmin` / `minioadmin`
+- **Console:** `http://localhost:9001` — login with credentials from your `.env` file
 - **Bucket name:** `eastpark-uploads` — all files go here
 - **In production:** replaced by Supabase Storage (same concept, different host)
 
@@ -207,7 +207,7 @@ Frontend uses that URL in the next request
 (e.g. POST /v1/shops  { ..., photoUrl: "..." })
 ```
 
-**To browse uploaded files:** Open `http://localhost:9001`, login with `minioadmin`/`minioadmin`, click the `eastpark-uploads` bucket.
+**To browse uploaded files:** Open `http://localhost:9001`, login with the MinIO credentials from your `.env` file, click the `eastpark-uploads` bucket.
 
 ---
 
@@ -409,7 +409,7 @@ If you see an error during a request, the log will show:
 The `pnpm seed` command creates the first admin user (idempotent — safe to re-run):
 
 - **Email:** `admin@eastpark.app`
-- **Password:** `HelloWorld#1234@`
+- **Password:** Set via `SEED_ADMIN_PASSWORD` env var
 
 This is defined in `prisma/seed-data.ts`. Edit that file to add more test users, shops, products, or orders. Run `pnpm prisma:reset && pnpm seed` to apply a fresh seed.
 

@@ -14,8 +14,7 @@ coverage
 
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.docker
 
 # Development files
@@ -33,10 +32,16 @@ coverage
 # CI/CD
 ci/Dockerfile.prod
 
-# Documentation
+# Documentation (not needed in image)
 README.md
 CHANGELOG.md
+CLAUDE.md
 docs/
+Documentation/
+
+# AI / editor config
+.claude/
+.copilot/
 
 # Testing
 test
@@ -44,10 +49,23 @@ coverage
 *.test.js
 *.spec.js
 jest.config.js
+tsconfig.test.json
 
-# Linting
+# Linting / formatting
 .eslintrc.js
 .eslintignore
+eslint.config.mjs
+.prettierrc
+.prettierignore
+commitlint.config.js
+.swcrc
+
+# Dev-only files
+docker-compose.yml
+fly.toml
+scripts/
+.husky/
+LICENSE
 .prettierrc
 .prettierignore
 

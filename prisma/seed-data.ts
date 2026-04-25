@@ -26,7 +26,12 @@ async function main() {
 
     // ── Admin ──────────────────────────────────────────────────────────────────
     const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@eastpark.app';
-    const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'HelloWorld#1234@';
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+    if (!adminPassword) {
+        throw new Error(
+            'SEED_ADMIN_PASSWORD env var is required. Set it in your .env file.'
+        );
+    }
     let admin = await db.user.findUnique({ where: { email: adminEmail } });
     if (!admin) {
         admin = await db.user.create({
@@ -44,8 +49,20 @@ async function main() {
         console.log(`· Admin already exists: ${admin.email}`);
     }
 
-    const mp = await argon2.hash('Merchant#1234@');
-    const rp = await argon2.hash('Resident#1234@');
+    const merchantPassword = process.env.SEED_MERCHANT_PASSWORD;
+    if (!merchantPassword) {
+        throw new Error(
+            'SEED_MERCHANT_PASSWORD env var is required. Set it in your .env file.'
+        );
+    }
+    const residentPassword = process.env.SEED_RESIDENT_PASSWORD;
+    if (!residentPassword) {
+        throw new Error(
+            'SEED_RESIDENT_PASSWORD env var is required. Set it in your .env file.'
+        );
+    }
+    const mp = await argon2.hash(merchantPassword);
+    const rp = await argon2.hash(residentPassword);
 
     // ── Merchants ──────────────────────────────────────────────────────────────
     const [m1, m2, m3, m4, m5] = await Promise.all([
@@ -104,28 +121,92 @@ async function main() {
     // ── Residents ──────────────────────────────────────────────────────────────
     const [r1, r2, r3, r4, r5, r6, r7, r8] = await Promise.all([
         db.user.create({
-            data: { name: 'Omar Sherif',    email: 'resident1@eastpark.app', phone: '+201001234001', unitNumber: 'A101', passwordHash: rp, role: Role.RESIDENT, isVerified: true },
+            data: {
+                name: 'Omar Sherif',
+                email: 'resident1@eastpark.app',
+                phone: '+201001234001',
+                unitNumber: 'A101',
+                passwordHash: rp,
+                role: Role.RESIDENT,
+                isVerified: true,
+            },
         }),
         db.user.create({
-            data: { name: 'Salma Ibrahim',  email: 'resident2@eastpark.app', phone: '+201001234002', unitNumber: 'A102', passwordHash: rp, role: Role.RESIDENT, isVerified: true },
+            data: {
+                name: 'Salma Ibrahim',
+                email: 'resident2@eastpark.app',
+                phone: '+201001234002',
+                unitNumber: 'A102',
+                passwordHash: rp,
+                role: Role.RESIDENT,
+                isVerified: true,
+            },
         }),
         db.user.create({
-            data: { name: 'Hassan Ali',     email: 'resident3@eastpark.app', phone: '+201001234003', unitNumber: 'B201', passwordHash: rp, role: Role.RESIDENT, isVerified: true },
+            data: {
+                name: 'Hassan Ali',
+                email: 'resident3@eastpark.app',
+                phone: '+201001234003',
+                unitNumber: 'B201',
+                passwordHash: rp,
+                role: Role.RESIDENT,
+                isVerified: true,
+            },
         }),
         db.user.create({
-            data: { name: 'Dina Mostafa',   email: 'resident4@eastpark.app', phone: '+201001234004', unitNumber: 'B202', passwordHash: rp, role: Role.RESIDENT, isVerified: true },
+            data: {
+                name: 'Dina Mostafa',
+                email: 'resident4@eastpark.app',
+                phone: '+201001234004',
+                unitNumber: 'B202',
+                passwordHash: rp,
+                role: Role.RESIDENT,
+                isVerified: true,
+            },
         }),
         db.user.create({
-            data: { name: 'Karim Nabil',    email: 'resident5@eastpark.app', phone: '+201001234005', unitNumber: 'C301', passwordHash: rp, role: Role.RESIDENT, isVerified: true },
+            data: {
+                name: 'Karim Nabil',
+                email: 'resident5@eastpark.app',
+                phone: '+201001234005',
+                unitNumber: 'C301',
+                passwordHash: rp,
+                role: Role.RESIDENT,
+                isVerified: true,
+            },
         }),
         db.user.create({
-            data: { name: 'Layla Mansour',  email: 'resident6@eastpark.app', phone: '+201001234006', unitNumber: 'D401', passwordHash: rp, role: Role.RESIDENT, isVerified: true },
+            data: {
+                name: 'Layla Mansour',
+                email: 'resident6@eastpark.app',
+                phone: '+201001234006',
+                unitNumber: 'D401',
+                passwordHash: rp,
+                role: Role.RESIDENT,
+                isVerified: true,
+            },
         }),
         db.user.create({
-            data: { name: 'Tarek Badawi',   email: 'resident7@eastpark.app', phone: '+201001234007', unitNumber: 'D402', passwordHash: rp, role: Role.RESIDENT, isVerified: true },
+            data: {
+                name: 'Tarek Badawi',
+                email: 'resident7@eastpark.app',
+                phone: '+201001234007',
+                unitNumber: 'D402',
+                passwordHash: rp,
+                role: Role.RESIDENT,
+                isVerified: true,
+            },
         }),
         db.user.create({
-            data: { name: 'Rana Fouad',     email: 'resident8@eastpark.app', phone: '+201001234008', unitNumber: 'E501', passwordHash: rp, role: Role.RESIDENT, isVerified: true },
+            data: {
+                name: 'Rana Fouad',
+                email: 'resident8@eastpark.app',
+                phone: '+201001234008',
+                unitNumber: 'E501',
+                passwordHash: rp,
+                role: Role.RESIDENT,
+                isVerified: true,
+            },
         }),
     ]);
 
@@ -277,80 +358,798 @@ async function main() {
     console.log('✓ Shops created');
 
     // ── Products ───────────────────────────────────────────────────────────────
-    const [espresso, cappuccino, croissant, latte, cheesecake, matchaLatte, coldBrew, clubSandwich, belgianWaffle, icedAmericano] =
-        await Promise.all([
-            db.product.create({ data: { name: 'Espresso',       nameAr: 'إسبريسو',            description: 'Double shot espresso',          descriptionAr: 'إسبريسو مزدوج',                  price: 15,  imageUrl: 'https://picsum.photos/seed/esp/400/400',    shopId: cafe.id } }),
-            db.product.create({ data: { name: 'Cappuccino',     nameAr: 'كابوتشينو',           description: 'Classic cappuccino with foam',   descriptionAr: 'كابوتشينو كلاسيكي',               price: 25,  imageUrl: 'https://picsum.photos/seed/cap/400/400',    shopId: cafe.id } }),
-            db.product.create({ data: { name: 'Croissant',      nameAr: 'كرواسان',             description: 'Buttery flaky croissant',        descriptionAr: 'كرواسان زبدي',                    price: 20,  imageUrl: 'https://picsum.photos/seed/croi/400/400',   shopId: cafe.id } }),
-            db.product.create({ data: { name: 'Latte',          nameAr: 'لاتيه',               description: 'Smooth milk latte',              descriptionAr: 'لاتيه بالحليب',                   price: 28,  imageUrl: 'https://picsum.photos/seed/lat/400/400',    shopId: cafe.id } }),
-            db.product.create({ data: { name: 'Cheesecake Slice', nameAr: 'تشيزكيك',           description: 'New York style cheesecake',      descriptionAr: 'تشيزكيك على الطريقة الأمريكية',   price: 45,  imageUrl: 'https://picsum.photos/seed/cake/400/400',   shopId: cafe.id } }),
-            db.product.create({ data: { name: 'Matcha Latte',   nameAr: 'ماتشا لاتيه',         description: 'Premium Japanese matcha',        descriptionAr: 'ماتشا ياباني فاخر',               price: 35,  imageUrl: 'https://picsum.photos/seed/match/400/400',  shopId: cafe.id } }),
-            db.product.create({ data: { name: 'Cold Brew',      nameAr: 'قهوة باردة',          description: '18-hour cold steeped coffee',    descriptionAr: 'قهوة منقوعة 18 ساعة',             price: 32,  imageUrl: 'https://picsum.photos/seed/cbrew/400/400',  shopId: cafe.id } }),
-            db.product.create({ data: { name: 'Club Sandwich',  nameAr: 'كلاب ساندويتش',       description: 'Triple-decker chicken club',     descriptionAr: 'ساندويتش دجاج ثلاثي الطوابق',    price: 65,  imageUrl: 'https://picsum.photos/seed/club/400/400',   shopId: cafe.id } }),
-            db.product.create({ data: { name: 'Belgian Waffle', nameAr: 'وافل بلجيكي',         description: 'Crispy waffle with cream & berries', descriptionAr: 'وافل مقرمش مع كريمة وتوت',    price: 55,  imageUrl: 'https://picsum.photos/seed/waff/400/400',   shopId: cafe.id } }),
-            db.product.create({ data: { name: 'Iced Americano', nameAr: 'أمريكانو بارد',        description: 'Double espresso over ice',       descriptionAr: 'إسبريسو مزدوج على الثلج',        price: 22,  imageUrl: 'https://picsum.photos/seed/iamer/400/400',  shopId: cafe.id } }),
-        ]);
-    const [milk, bread, eggs, rice, oliveoil, pasta, yogurt, tomatoes, butter, orangeJuice] = await Promise.all([
-        db.product.create({ data: { name: 'Full Cream Milk 1L', nameAr: 'حليب كامل الدسم 1 لتر', price: 18,  imageUrl: 'https://picsum.photos/seed/milk/400/400',   shopId: grocery.id } }),
-        db.product.create({ data: { name: 'Bread Loaf',         nameAr: 'رغيف خبز',               price: 8,   imageUrl: 'https://picsum.photos/seed/bread/400/400',  shopId: grocery.id } }),
-        db.product.create({ data: { name: 'Eggs 12 pcs',        nameAr: 'بيض 12 حبة',              price: 55,  imageUrl: 'https://picsum.photos/seed/eggs/400/400',   shopId: grocery.id } }),
-        db.product.create({ data: { name: 'Rice 1kg',           nameAr: 'أرز 1 كيلو',              price: 25,  imageUrl: 'https://picsum.photos/seed/rice/400/400',   shopId: grocery.id } }),
-        db.product.create({ data: { name: 'Olive Oil 750ml',    nameAr: 'زيت زيتون 750 مل',        price: 120, imageUrl: 'https://picsum.photos/seed/oil/400/400',    shopId: grocery.id } }),
-        db.product.create({ data: { name: 'Pasta 500g',         nameAr: 'مكرونة 500 جم',           price: 22,  imageUrl: 'https://picsum.photos/seed/pasta/400/400',  shopId: grocery.id } }),
-        db.product.create({ data: { name: 'Yogurt 500g',        nameAr: 'زبادي 500 جم',            price: 20,  imageUrl: 'https://picsum.photos/seed/yogurt/400/400', shopId: grocery.id } }),
-        db.product.create({ data: { name: 'Fresh Tomatoes 1kg', nameAr: 'طماطم طازجة 1 كيلو',      price: 15,  imageUrl: 'https://picsum.photos/seed/tom/400/400',    shopId: grocery.id } }),
-        db.product.create({ data: { name: 'Butter 200g',        nameAr: 'زبدة 200 جم',             price: 35,  imageUrl: 'https://picsum.photos/seed/butt/400/400',   shopId: grocery.id } }),
-        db.product.create({ data: { name: 'Orange Juice 1L',    nameAr: 'عصير برتقال 1 لتر',       price: 28,  imageUrl: 'https://picsum.photos/seed/oj/400/400',     shopId: grocery.id } }),
+    const [
+        espresso,
+        cappuccino,
+        croissant,
+        latte,
+        cheesecake,
+        matchaLatte,
+        coldBrew,
+        clubSandwich,
+        belgianWaffle,
+        icedAmericano,
+    ] = await Promise.all([
+        db.product.create({
+            data: {
+                name: 'Espresso',
+                nameAr: 'إسبريسو',
+                description: 'Double shot espresso',
+                descriptionAr: 'إسبريسو مزدوج',
+                price: 15,
+                imageUrl: 'https://picsum.photos/seed/esp/400/400',
+                shopId: cafe.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Cappuccino',
+                nameAr: 'كابوتشينو',
+                description: 'Classic cappuccino with foam',
+                descriptionAr: 'كابوتشينو كلاسيكي',
+                price: 25,
+                imageUrl: 'https://picsum.photos/seed/cap/400/400',
+                shopId: cafe.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Croissant',
+                nameAr: 'كرواسان',
+                description: 'Buttery flaky croissant',
+                descriptionAr: 'كرواسان زبدي',
+                price: 20,
+                imageUrl: 'https://picsum.photos/seed/croi/400/400',
+                shopId: cafe.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Latte',
+                nameAr: 'لاتيه',
+                description: 'Smooth milk latte',
+                descriptionAr: 'لاتيه بالحليب',
+                price: 28,
+                imageUrl: 'https://picsum.photos/seed/lat/400/400',
+                shopId: cafe.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Cheesecake Slice',
+                nameAr: 'تشيزكيك',
+                description: 'New York style cheesecake',
+                descriptionAr: 'تشيزكيك على الطريقة الأمريكية',
+                price: 45,
+                imageUrl: 'https://picsum.photos/seed/cake/400/400',
+                shopId: cafe.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Matcha Latte',
+                nameAr: 'ماتشا لاتيه',
+                description: 'Premium Japanese matcha',
+                descriptionAr: 'ماتشا ياباني فاخر',
+                price: 35,
+                imageUrl: 'https://picsum.photos/seed/match/400/400',
+                shopId: cafe.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Cold Brew',
+                nameAr: 'قهوة باردة',
+                description: '18-hour cold steeped coffee',
+                descriptionAr: 'قهوة منقوعة 18 ساعة',
+                price: 32,
+                imageUrl: 'https://picsum.photos/seed/cbrew/400/400',
+                shopId: cafe.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Club Sandwich',
+                nameAr: 'كلاب ساندويتش',
+                description: 'Triple-decker chicken club',
+                descriptionAr: 'ساندويتش دجاج ثلاثي الطوابق',
+                price: 65,
+                imageUrl: 'https://picsum.photos/seed/club/400/400',
+                shopId: cafe.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Belgian Waffle',
+                nameAr: 'وافل بلجيكي',
+                description: 'Crispy waffle with cream & berries',
+                descriptionAr: 'وافل مقرمش مع كريمة وتوت',
+                price: 55,
+                imageUrl: 'https://picsum.photos/seed/waff/400/400',
+                shopId: cafe.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Iced Americano',
+                nameAr: 'أمريكانو بارد',
+                description: 'Double espresso over ice',
+                descriptionAr: 'إسبريسو مزدوج على الثلج',
+                price: 22,
+                imageUrl: 'https://picsum.photos/seed/iamer/400/400',
+                shopId: cafe.id,
+            },
+        }),
     ]);
-    const [chicken, beef, lamb, wings, beefSteak, wholeChicken, sausages, liver] = await Promise.all([
-        db.product.create({ data: { name: 'Chicken Breast 1kg',  nameAr: 'صدر دجاج 1 كيلو',       price: 95,  imageUrl: 'https://picsum.photos/seed/chick/400/400',  shopId: butcher.id } }),
-        db.product.create({ data: { name: 'Ground Beef 500g',    nameAr: 'لحم مفروم 500 جم',       price: 180, imageUrl: 'https://picsum.photos/seed/beef/400/400',   shopId: butcher.id } }),
-        db.product.create({ data: { name: 'Lamb Chops 1kg',      nameAr: 'ريش خروف 1 كيلو',        price: 250, imageUrl: 'https://picsum.photos/seed/lamb/400/400',   shopId: butcher.id } }),
-        db.product.create({ data: { name: 'Chicken Wings 1kg',   nameAr: 'أجنحة دجاج 1 كيلو',     price: 70,  imageUrl: 'https://picsum.photos/seed/wings/400/400',  shopId: butcher.id } }),
-        db.product.create({ data: { name: 'Beef Steak 500g',     nameAr: 'ستيك لحم 500 جم',        price: 220, imageUrl: 'https://picsum.photos/seed/steak/400/400',  shopId: butcher.id } }),
-        db.product.create({ data: { name: 'Whole Chicken',       nameAr: 'دجاجة كاملة',            price: 85,  imageUrl: 'https://picsum.photos/seed/wchick/400/400', shopId: butcher.id } }),
-        db.product.create({ data: { name: 'Beef Sausages 500g',  nameAr: 'سجق لحم 500 جم',         price: 95,  imageUrl: 'https://picsum.photos/seed/saus/400/400',   shopId: butcher.id } }),
-        db.product.create({ data: { name: 'Calf Liver 500g',     nameAr: 'كبدة عجل 500 جم',        price: 120, imageUrl: 'https://picsum.photos/seed/liver/400/400',  shopId: butcher.id } }),
+    const [
+        milk,
+        bread,
+        eggs,
+        rice,
+        oliveoil,
+        pasta,
+        yogurt,
+        tomatoes,
+        butter,
+        orangeJuice,
+    ] = await Promise.all([
+        db.product.create({
+            data: {
+                name: 'Full Cream Milk 1L',
+                nameAr: 'حليب كامل الدسم 1 لتر',
+                price: 18,
+                imageUrl: 'https://picsum.photos/seed/milk/400/400',
+                shopId: grocery.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Bread Loaf',
+                nameAr: 'رغيف خبز',
+                price: 8,
+                imageUrl: 'https://picsum.photos/seed/bread/400/400',
+                shopId: grocery.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Eggs 12 pcs',
+                nameAr: 'بيض 12 حبة',
+                price: 55,
+                imageUrl: 'https://picsum.photos/seed/eggs/400/400',
+                shopId: grocery.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Rice 1kg',
+                nameAr: 'أرز 1 كيلو',
+                price: 25,
+                imageUrl: 'https://picsum.photos/seed/rice/400/400',
+                shopId: grocery.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Olive Oil 750ml',
+                nameAr: 'زيت زيتون 750 مل',
+                price: 120,
+                imageUrl: 'https://picsum.photos/seed/oil/400/400',
+                shopId: grocery.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Pasta 500g',
+                nameAr: 'مكرونة 500 جم',
+                price: 22,
+                imageUrl: 'https://picsum.photos/seed/pasta/400/400',
+                shopId: grocery.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Yogurt 500g',
+                nameAr: 'زبادي 500 جم',
+                price: 20,
+                imageUrl: 'https://picsum.photos/seed/yogurt/400/400',
+                shopId: grocery.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Fresh Tomatoes 1kg',
+                nameAr: 'طماطم طازجة 1 كيلو',
+                price: 15,
+                imageUrl: 'https://picsum.photos/seed/tom/400/400',
+                shopId: grocery.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Butter 200g',
+                nameAr: 'زبدة 200 جم',
+                price: 35,
+                imageUrl: 'https://picsum.photos/seed/butt/400/400',
+                shopId: grocery.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Orange Juice 1L',
+                nameAr: 'عصير برتقال 1 لتر',
+                price: 28,
+                imageUrl: 'https://picsum.photos/seed/oj/400/400',
+                shopId: grocery.id,
+            },
+        }),
     ]);
-    const [acClean, plumbing, electrical, deepClean, painting, furnitureAssembly] = await Promise.all([
-        db.product.create({ data: { name: 'AC Cleaning',          nameAr: 'تنظيف مكيف',      description: 'Full AC unit cleaning & service',    descriptionAr: 'تنظيف وصيانة وحدة التكييف',       price: 350, shopId: services.id } }),
-        db.product.create({ data: { name: 'Plumbing Fix',         nameAr: 'إصلاح سباكة',     description: 'Leak detection & repair',            descriptionAr: 'كشف وإصلاح التسربات',             price: 200, shopId: services.id } }),
-        db.product.create({ data: { name: 'Electrical Check',     nameAr: 'فحص كهربائي',     description: 'Electrical safety inspection',       descriptionAr: 'فحص أمان كهربائي',               price: 150, shopId: services.id } }),
-        db.product.create({ data: { name: 'Deep Cleaning',        nameAr: 'تنظيف شامل',      description: 'Full apartment deep clean',          descriptionAr: 'تنظيف شامل للشقة',               price: 500, shopId: services.id } }),
-        db.product.create({ data: { name: 'Room Painting',        nameAr: 'دهان غرفة',        description: 'Professional room painting service', descriptionAr: 'خدمة دهان غرفة احترافية',         price: 800, shopId: services.id } }),
-        db.product.create({ data: { name: 'Furniture Assembly',   nameAr: 'تركيب أثاث',      description: 'IKEA & flatpack furniture assembly',  descriptionAr: 'تركيب أثاث إيكيا والمجمعات',     price: 250, shopId: services.id } }),
+    const [
+        chicken,
+        beef,
+        lamb,
+        wings,
+        beefSteak,
+        wholeChicken,
+        sausages,
+        liver,
+    ] = await Promise.all([
+        db.product.create({
+            data: {
+                name: 'Chicken Breast 1kg',
+                nameAr: 'صدر دجاج 1 كيلو',
+                price: 95,
+                imageUrl: 'https://picsum.photos/seed/chick/400/400',
+                shopId: butcher.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Ground Beef 500g',
+                nameAr: 'لحم مفروم 500 جم',
+                price: 180,
+                imageUrl: 'https://picsum.photos/seed/beef/400/400',
+                shopId: butcher.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Lamb Chops 1kg',
+                nameAr: 'ريش خروف 1 كيلو',
+                price: 250,
+                imageUrl: 'https://picsum.photos/seed/lamb/400/400',
+                shopId: butcher.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Chicken Wings 1kg',
+                nameAr: 'أجنحة دجاج 1 كيلو',
+                price: 70,
+                imageUrl: 'https://picsum.photos/seed/wings/400/400',
+                shopId: butcher.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Beef Steak 500g',
+                nameAr: 'ستيك لحم 500 جم',
+                price: 220,
+                imageUrl: 'https://picsum.photos/seed/steak/400/400',
+                shopId: butcher.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Whole Chicken',
+                nameAr: 'دجاجة كاملة',
+                price: 85,
+                imageUrl: 'https://picsum.photos/seed/wchick/400/400',
+                shopId: butcher.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Beef Sausages 500g',
+                nameAr: 'سجق لحم 500 جم',
+                price: 95,
+                imageUrl: 'https://picsum.photos/seed/saus/400/400',
+                shopId: butcher.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Calf Liver 500g',
+                nameAr: 'كبدة عجل 500 جم',
+                price: 120,
+                imageUrl: 'https://picsum.photos/seed/liver/400/400',
+                shopId: butcher.id,
+            },
+        }),
     ]);
-    const [quinoa, honey, nuts, chia, greentea, proteinPowder, almondButter, medjoolDates] = await Promise.all([
-        db.product.create({ data: { name: 'Quinoa 500g',          nameAr: 'كينوا 500 جم',           price: 85,  imageUrl: 'https://picsum.photos/seed/quin/400/400',   shopId: health.id } }),
-        db.product.create({ data: { name: 'Organic Honey 500g',   nameAr: 'عسل طبيعي 500 جم',       price: 120, imageUrl: 'https://picsum.photos/seed/honey/400/400',  shopId: health.id } }),
-        db.product.create({ data: { name: 'Mixed Nuts 250g',      nameAr: 'مكسرات مشكلة 250 جم',    price: 95,  imageUrl: 'https://picsum.photos/seed/nuts/400/400',   shopId: health.id } }),
-        db.product.create({ data: { name: 'Chia Seeds 300g',      nameAr: 'بذور شيا 300 جم',        price: 65,  imageUrl: 'https://picsum.photos/seed/chia/400/400',   shopId: health.id } }),
-        db.product.create({ data: { name: 'Green Tea 100 bags',   nameAr: 'شاي أخضر 100 كيس',      price: 45,  imageUrl: 'https://picsum.photos/seed/tea/400/400',    shopId: health.id } }),
-        db.product.create({ data: { name: 'Whey Protein 1kg',     nameAr: 'بروتين واي 1 كيلو',     price: 450, imageUrl: 'https://picsum.photos/seed/prot/400/400',   shopId: health.id } }),
-        db.product.create({ data: { name: 'Almond Butter 300g',   nameAr: 'زبدة لوز 300 جم',        price: 180, imageUrl: 'https://picsum.photos/seed/albut/400/400',  shopId: health.id } }),
-        db.product.create({ data: { name: 'Medjool Dates 500g',   nameAr: 'تمر مجدول 500 جم',       price: 130, imageUrl: 'https://picsum.photos/seed/dates/400/400',  shopId: health.id } }),
+    const [
+        acClean,
+        plumbing,
+        electrical,
+        deepClean,
+        painting,
+        furnitureAssembly,
+    ] = await Promise.all([
+        db.product.create({
+            data: {
+                name: 'AC Cleaning',
+                nameAr: 'تنظيف مكيف',
+                description: 'Full AC unit cleaning & service',
+                descriptionAr: 'تنظيف وصيانة وحدة التكييف',
+                price: 350,
+                shopId: services.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Plumbing Fix',
+                nameAr: 'إصلاح سباكة',
+                description: 'Leak detection & repair',
+                descriptionAr: 'كشف وإصلاح التسربات',
+                price: 200,
+                shopId: services.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Electrical Check',
+                nameAr: 'فحص كهربائي',
+                description: 'Electrical safety inspection',
+                descriptionAr: 'فحص أمان كهربائي',
+                price: 150,
+                shopId: services.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Deep Cleaning',
+                nameAr: 'تنظيف شامل',
+                description: 'Full apartment deep clean',
+                descriptionAr: 'تنظيف شامل للشقة',
+                price: 500,
+                shopId: services.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Room Painting',
+                nameAr: 'دهان غرفة',
+                description: 'Professional room painting service',
+                descriptionAr: 'خدمة دهان غرفة احترافية',
+                price: 800,
+                shopId: services.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Furniture Assembly',
+                nameAr: 'تركيب أثاث',
+                description: 'IKEA & flatpack furniture assembly',
+                descriptionAr: 'تركيب أثاث إيكيا والمجمعات',
+                price: 250,
+                shopId: services.id,
+            },
+        }),
+    ]);
+    const [
+        quinoa,
+        honey,
+        nuts,
+        chia,
+        greentea,
+        proteinPowder,
+        almondButter,
+        medjoolDates,
+    ] = await Promise.all([
+        db.product.create({
+            data: {
+                name: 'Quinoa 500g',
+                nameAr: 'كينوا 500 جم',
+                price: 85,
+                imageUrl: 'https://picsum.photos/seed/quin/400/400',
+                shopId: health.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Organic Honey 500g',
+                nameAr: 'عسل طبيعي 500 جم',
+                price: 120,
+                imageUrl: 'https://picsum.photos/seed/honey/400/400',
+                shopId: health.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Mixed Nuts 250g',
+                nameAr: 'مكسرات مشكلة 250 جم',
+                price: 95,
+                imageUrl: 'https://picsum.photos/seed/nuts/400/400',
+                shopId: health.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Chia Seeds 300g',
+                nameAr: 'بذور شيا 300 جم',
+                price: 65,
+                imageUrl: 'https://picsum.photos/seed/chia/400/400',
+                shopId: health.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Green Tea 100 bags',
+                nameAr: 'شاي أخضر 100 كيس',
+                price: 45,
+                imageUrl: 'https://picsum.photos/seed/tea/400/400',
+                shopId: health.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Whey Protein 1kg',
+                nameAr: 'بروتين واي 1 كيلو',
+                price: 450,
+                imageUrl: 'https://picsum.photos/seed/prot/400/400',
+                shopId: health.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Almond Butter 300g',
+                nameAr: 'زبدة لوز 300 جم',
+                price: 180,
+                imageUrl: 'https://picsum.photos/seed/albut/400/400',
+                shopId: health.id,
+            },
+        }),
+        db.product.create({
+            data: {
+                name: 'Medjool Dates 500g',
+                nameAr: 'تمر مجدول 500 جم',
+                price: 130,
+                imageUrl: 'https://picsum.photos/seed/dates/400/400',
+                shopId: health.id,
+            },
+        }),
     ]);
 
     console.log('✓ Products created');
 
     // ── Orders ─────────────────────────────────────────────────────────────────
-    const mk = (productId: string, quantity: number, unitPrice: number, name: string, nameAr: string) =>
-        ({ productId, quantity, unitPrice, productNameSnapshot: name, productNameArSnapshot: nameAr });
+    const mk = (
+        productId: string,
+        quantity: number,
+        unitPrice: number,
+        name: string,
+        nameAr: string
+    ) => ({
+        productId,
+        quantity,
+        unitPrice,
+        productNameSnapshot: name,
+        productNameArSnapshot: nameAr,
+    });
 
-    const order1 = await db.order.create({ data: { residentId: r1.id, shopId: cafe.id,     status: OrderStatus.DELIVERED,   totalAmount: 50,  deliveryUnit: 'A101', paymentMethod: PaymentMethod.CASH, isPaid: false, notes: 'Please knock softly', items: { create: [mk(espresso.id, 2, 15, 'Espresso', 'إسبريسو'), mk(croissant.id, 1, 20, 'Croissant', 'كرواسان')] } } });
-    const order2 = await db.order.create({ data: { residentId: r2.id, shopId: grocery.id,  status: OrderStatus.PREPARING,   totalAmount: 70,  deliveryUnit: 'A102', paymentMethod: PaymentMethod.CASH, isPaid: false, items: { create: [mk(milk.id, 3, 18, 'Full Cream Milk 1L', 'حليب كامل الدسم 1 لتر'), mk(bread.id, 2, 8, 'Bread Loaf', 'رغيف خبز')] } } });
-    const order3 = await db.order.create({ data: { residentId: r3.id, shopId: butcher.id,  status: OrderStatus.PLACED,      totalAmount: 190, deliveryUnit: 'B201', paymentMethod: PaymentMethod.CASH, isPaid: false, notes: 'Leave at the door', items: { create: [mk(chicken.id, 2, 95, 'Chicken Breast 1kg', 'صدر دجاج 1 كيلو')] } } });
-    const order4 = await db.order.create({ data: { residentId: r4.id, shopId: cafe.id,     status: OrderStatus.CONFIRMED,   totalAmount: 73,  deliveryUnit: 'B202', paymentMethod: PaymentMethod.CASH, isPaid: false, items: { create: [mk(latte.id, 1, 28, 'Latte', 'لاتيه'), mk(cheesecake.id, 1, 45, 'Cheesecake Slice', 'تشيزكيك')] } } });
-    const order5 = await db.order.create({ data: { residentId: r5.id, shopId: health.id,   status: OrderStatus.ON_THE_WAY,  totalAmount: 300, deliveryUnit: 'C301', paymentMethod: PaymentMethod.CASH, isPaid: false, items: { create: [mk(quinoa.id, 1, 85, 'Quinoa 500g', 'كينوا 500 جم'), mk(honey.id, 1, 120, 'Organic Honey 500g', 'عسل طبيعي 500 جم'), mk(nuts.id, 1, 95, 'Mixed Nuts 250g', 'مكسرات مشكلة 250 جم')] } } });
-    const order6 = await db.order.create({ data: { residentId: r6.id, shopId: cafe.id,     status: OrderStatus.DELIVERED,   totalAmount: 87,  deliveryUnit: 'D401', paymentMethod: PaymentMethod.CASH, isPaid: false, notes: 'Ring bell twice', items: { create: [mk(matchaLatte.id, 1, 35, 'Matcha Latte', 'ماتشا لاتيه'), mk(belgianWaffle.id, 1, 55, 'Belgian Waffle', 'وافل بلجيكي')] } } });
-    const order7 = await db.order.create({ data: { residentId: r7.id, shopId: grocery.id,  status: OrderStatus.DELIVERED,   totalAmount: 148, deliveryUnit: 'D402', paymentMethod: PaymentMethod.CASH, isPaid: false, items: { create: [mk(eggs.id, 1, 55, 'Eggs 12 pcs', 'بيض 12 حبة'), mk(oliveoil.id, 1, 120, 'Olive Oil 750ml', 'زيت زيتون 750 مل'), mk(bread.id, 2, 8, 'Bread Loaf', 'رغيف خبز'), mk(butter.id, 1, 35, 'Butter 200g', 'زبدة 200 جم')] } } });
-    const order8 = await db.order.create({ data: { residentId: r8.id, shopId: butcher.id,  status: OrderStatus.CONFIRMED,   totalAmount: 440, deliveryUnit: 'E501', paymentMethod: PaymentMethod.CASH, isPaid: false, items: { create: [mk(beefSteak.id, 2, 220, 'Beef Steak 500g', 'ستيك لحم 500 جم')] } } });
-    const order9 = await db.order.create({ data: { residentId: r1.id, shopId: grocery.id,  status: OrderStatus.DELIVERED,   totalAmount: 118, deliveryUnit: 'A101', paymentMethod: PaymentMethod.CASH, isPaid: false, items: { create: [mk(pasta.id, 2, 22, 'Pasta 500g', 'مكرونة 500 جم'), mk(tomatoes.id, 2, 15, 'Fresh Tomatoes 1kg', 'طماطم طازجة 1 كيلو'), mk(yogurt.id, 2, 20, 'Yogurt 500g', 'زبادي 500 جم'), mk(orangeJuice.id, 1, 28, 'Orange Juice 1L', 'عصير برتقال 1 لتر')] } } });
-    const order10 = await db.order.create({ data: { residentId: r2.id, shopId: health.id,   status: OrderStatus.DELIVERED,   totalAmount: 260, deliveryUnit: 'A102', paymentMethod: PaymentMethod.CASH, isPaid: false, items: { create: [mk(proteinPowder.id, 1, 450, 'Whey Protein 1kg', 'بروتين واي 1 كيلو'), mk(greentea.id, 1, 45, 'Green Tea 100 bags', 'شاي أخضر 100 كيس')] } } });
-    const order11 = await db.order.create({ data: { residentId: r3.id, shopId: services.id, status: OrderStatus.DELIVERED,   totalAmount: 350, deliveryUnit: 'B201', paymentMethod: PaymentMethod.CASH, isPaid: false, notes: 'AC in living room', items: { create: [mk(acClean.id, 1, 350, 'AC Cleaning', 'تنظيف مكيف')] } } });
-    const order12 = await db.order.create({ data: { residentId: r4.id, shopId: butcher.id,  status: OrderStatus.CANCELLED,   totalAmount: 180, deliveryUnit: 'B202', paymentMethod: PaymentMethod.CASH, isPaid: false, items: { create: [mk(beef.id, 1, 180, 'Ground Beef 500g', 'لحم مفروم 500 جم')] } } });
-    const order13 = await db.order.create({ data: { residentId: r5.id, shopId: cafe.id,     status: OrderStatus.DELIVERED,   totalAmount: 77,  deliveryUnit: 'C301', paymentMethod: PaymentMethod.CASH, isPaid: false, items: { create: [mk(coldBrew.id, 1, 32, 'Cold Brew', 'قهوة باردة'), mk(clubSandwich.id, 1, 65, 'Club Sandwich', 'كلاب ساندويتش')] } } });
-    const order14 = await db.order.create({ data: { residentId: r6.id, shopId: services.id, status: OrderStatus.ON_THE_WAY,  totalAmount: 500, deliveryUnit: 'D401', paymentMethod: PaymentMethod.CASH, isPaid: false, notes: 'All 3 bedrooms', items: { create: [mk(deepClean.id, 1, 500, 'Deep Cleaning', 'تنظيف شامل')] } } });
+    const order1 = await db.order.create({
+        data: {
+            residentId: r1.id,
+            shopId: cafe.id,
+            status: OrderStatus.DELIVERED,
+            totalAmount: 50,
+            deliveryUnit: 'A101',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            notes: 'Please knock softly',
+            items: {
+                create: [
+                    mk(espresso.id, 2, 15, 'Espresso', 'إسبريسو'),
+                    mk(croissant.id, 1, 20, 'Croissant', 'كرواسان'),
+                ],
+            },
+        },
+    });
+    const order2 = await db.order.create({
+        data: {
+            residentId: r2.id,
+            shopId: grocery.id,
+            status: OrderStatus.PREPARING,
+            totalAmount: 70,
+            deliveryUnit: 'A102',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            items: {
+                create: [
+                    mk(
+                        milk.id,
+                        3,
+                        18,
+                        'Full Cream Milk 1L',
+                        'حليب كامل الدسم 1 لتر'
+                    ),
+                    mk(bread.id, 2, 8, 'Bread Loaf', 'رغيف خبز'),
+                ],
+            },
+        },
+    });
+    const order3 = await db.order.create({
+        data: {
+            residentId: r3.id,
+            shopId: butcher.id,
+            status: OrderStatus.PLACED,
+            totalAmount: 190,
+            deliveryUnit: 'B201',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            notes: 'Leave at the door',
+            items: {
+                create: [
+                    mk(
+                        chicken.id,
+                        2,
+                        95,
+                        'Chicken Breast 1kg',
+                        'صدر دجاج 1 كيلو'
+                    ),
+                ],
+            },
+        },
+    });
+    const order4 = await db.order.create({
+        data: {
+            residentId: r4.id,
+            shopId: cafe.id,
+            status: OrderStatus.CONFIRMED,
+            totalAmount: 73,
+            deliveryUnit: 'B202',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            items: {
+                create: [
+                    mk(latte.id, 1, 28, 'Latte', 'لاتيه'),
+                    mk(cheesecake.id, 1, 45, 'Cheesecake Slice', 'تشيزكيك'),
+                ],
+            },
+        },
+    });
+    const order5 = await db.order.create({
+        data: {
+            residentId: r5.id,
+            shopId: health.id,
+            status: OrderStatus.ON_THE_WAY,
+            totalAmount: 300,
+            deliveryUnit: 'C301',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            items: {
+                create: [
+                    mk(quinoa.id, 1, 85, 'Quinoa 500g', 'كينوا 500 جم'),
+                    mk(
+                        honey.id,
+                        1,
+                        120,
+                        'Organic Honey 500g',
+                        'عسل طبيعي 500 جم'
+                    ),
+                    mk(
+                        nuts.id,
+                        1,
+                        95,
+                        'Mixed Nuts 250g',
+                        'مكسرات مشكلة 250 جم'
+                    ),
+                ],
+            },
+        },
+    });
+    const order6 = await db.order.create({
+        data: {
+            residentId: r6.id,
+            shopId: cafe.id,
+            status: OrderStatus.DELIVERED,
+            totalAmount: 87,
+            deliveryUnit: 'D401',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            notes: 'Ring bell twice',
+            items: {
+                create: [
+                    mk(matchaLatte.id, 1, 35, 'Matcha Latte', 'ماتشا لاتيه'),
+                    mk(
+                        belgianWaffle.id,
+                        1,
+                        55,
+                        'Belgian Waffle',
+                        'وافل بلجيكي'
+                    ),
+                ],
+            },
+        },
+    });
+    const order7 = await db.order.create({
+        data: {
+            residentId: r7.id,
+            shopId: grocery.id,
+            status: OrderStatus.DELIVERED,
+            totalAmount: 148,
+            deliveryUnit: 'D402',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            items: {
+                create: [
+                    mk(eggs.id, 1, 55, 'Eggs 12 pcs', 'بيض 12 حبة'),
+                    mk(
+                        oliveoil.id,
+                        1,
+                        120,
+                        'Olive Oil 750ml',
+                        'زيت زيتون 750 مل'
+                    ),
+                    mk(bread.id, 2, 8, 'Bread Loaf', 'رغيف خبز'),
+                    mk(butter.id, 1, 35, 'Butter 200g', 'زبدة 200 جم'),
+                ],
+            },
+        },
+    });
+    const order8 = await db.order.create({
+        data: {
+            residentId: r8.id,
+            shopId: butcher.id,
+            status: OrderStatus.CONFIRMED,
+            totalAmount: 440,
+            deliveryUnit: 'E501',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            items: {
+                create: [
+                    mk(
+                        beefSteak.id,
+                        2,
+                        220,
+                        'Beef Steak 500g',
+                        'ستيك لحم 500 جم'
+                    ),
+                ],
+            },
+        },
+    });
+    const order9 = await db.order.create({
+        data: {
+            residentId: r1.id,
+            shopId: grocery.id,
+            status: OrderStatus.DELIVERED,
+            totalAmount: 118,
+            deliveryUnit: 'A101',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            items: {
+                create: [
+                    mk(pasta.id, 2, 22, 'Pasta 500g', 'مكرونة 500 جم'),
+                    mk(
+                        tomatoes.id,
+                        2,
+                        15,
+                        'Fresh Tomatoes 1kg',
+                        'طماطم طازجة 1 كيلو'
+                    ),
+                    mk(yogurt.id, 2, 20, 'Yogurt 500g', 'زبادي 500 جم'),
+                    mk(
+                        orangeJuice.id,
+                        1,
+                        28,
+                        'Orange Juice 1L',
+                        'عصير برتقال 1 لتر'
+                    ),
+                ],
+            },
+        },
+    });
+    const order10 = await db.order.create({
+        data: {
+            residentId: r2.id,
+            shopId: health.id,
+            status: OrderStatus.DELIVERED,
+            totalAmount: 260,
+            deliveryUnit: 'A102',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            items: {
+                create: [
+                    mk(
+                        proteinPowder.id,
+                        1,
+                        450,
+                        'Whey Protein 1kg',
+                        'بروتين واي 1 كيلو'
+                    ),
+                    mk(
+                        greentea.id,
+                        1,
+                        45,
+                        'Green Tea 100 bags',
+                        'شاي أخضر 100 كيس'
+                    ),
+                ],
+            },
+        },
+    });
+    const order11 = await db.order.create({
+        data: {
+            residentId: r3.id,
+            shopId: services.id,
+            status: OrderStatus.DELIVERED,
+            totalAmount: 350,
+            deliveryUnit: 'B201',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            notes: 'AC in living room',
+            items: {
+                create: [mk(acClean.id, 1, 350, 'AC Cleaning', 'تنظيف مكيف')],
+            },
+        },
+    });
+    const order12 = await db.order.create({
+        data: {
+            residentId: r4.id,
+            shopId: butcher.id,
+            status: OrderStatus.CANCELLED,
+            totalAmount: 180,
+            deliveryUnit: 'B202',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            items: {
+                create: [
+                    mk(beef.id, 1, 180, 'Ground Beef 500g', 'لحم مفروم 500 جم'),
+                ],
+            },
+        },
+    });
+    const order13 = await db.order.create({
+        data: {
+            residentId: r5.id,
+            shopId: cafe.id,
+            status: OrderStatus.DELIVERED,
+            totalAmount: 77,
+            deliveryUnit: 'C301',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            items: {
+                create: [
+                    mk(coldBrew.id, 1, 32, 'Cold Brew', 'قهوة باردة'),
+                    mk(
+                        clubSandwich.id,
+                        1,
+                        65,
+                        'Club Sandwich',
+                        'كلاب ساندويتش'
+                    ),
+                ],
+            },
+        },
+    });
+    const order14 = await db.order.create({
+        data: {
+            residentId: r6.id,
+            shopId: services.id,
+            status: OrderStatus.ON_THE_WAY,
+            totalAmount: 500,
+            deliveryUnit: 'D401',
+            paymentMethod: PaymentMethod.CASH,
+            isPaid: false,
+            notes: 'All 3 bedrooms',
+            items: {
+                create: [
+                    mk(deepClean.id, 1, 500, 'Deep Cleaning', 'تنظيف شامل'),
+                ],
+            },
+        },
+    });
 
     console.log('✓ 14 orders created');
 
@@ -358,26 +1157,122 @@ async function main() {
     await db.review.createMany({
         data: [
             // Café (4 reviews)
-            { userId: r1.id, shopId: cafe.id,     rating: 5, comment: 'Amazing coffee and fast delivery! The matcha latte is a must-try.' },
-            { userId: r4.id, shopId: cafe.id,     rating: 4, comment: 'Great latte, cheesecake was perfect. Delivery was a bit slow.' },
-            { userId: r6.id, shopId: cafe.id,     rating: 5, comment: 'The Belgian waffle is incredible! Best café in the compound by far.' },
-            { userId: r7.id, shopId: cafe.id,     rating: 4, comment: 'Cold brew is excellent, exactly what I needed on a hot day.' },
+            {
+                userId: r1.id,
+                shopId: cafe.id,
+                rating: 5,
+                comment:
+                    'Amazing coffee and fast delivery! The matcha latte is a must-try.',
+            },
+            {
+                userId: r4.id,
+                shopId: cafe.id,
+                rating: 4,
+                comment:
+                    'Great latte, cheesecake was perfect. Delivery was a bit slow.',
+            },
+            {
+                userId: r6.id,
+                shopId: cafe.id,
+                rating: 5,
+                comment:
+                    'The Belgian waffle is incredible! Best café in the compound by far.',
+            },
+            {
+                userId: r7.id,
+                shopId: cafe.id,
+                rating: 4,
+                comment:
+                    'Cold brew is excellent, exactly what I needed on a hot day.',
+            },
             // Grocery (4 reviews)
-            { userId: r2.id, shopId: grocery.id,  rating: 4, comment: 'Good selection of products, always fresh. Will definitely order again.' },
-            { userId: r1.id, shopId: grocery.id,  rating: 5, comment: 'Very convenient, olive oil and pasta are top quality. Fast delivery!' },
-            { userId: r5.id, shopId: grocery.id,  rating: 3, comment: 'Decent selection but some items were out of stock during my order.' },
-            { userId: r8.id, shopId: grocery.id,  rating: 4, comment: 'Fresh produce, good prices. The orange juice is really fresh.' },
+            {
+                userId: r2.id,
+                shopId: grocery.id,
+                rating: 4,
+                comment:
+                    'Good selection of products, always fresh. Will definitely order again.',
+            },
+            {
+                userId: r1.id,
+                shopId: grocery.id,
+                rating: 5,
+                comment:
+                    'Very convenient, olive oil and pasta are top quality. Fast delivery!',
+            },
+            {
+                userId: r5.id,
+                shopId: grocery.id,
+                rating: 3,
+                comment:
+                    'Decent selection but some items were out of stock during my order.',
+            },
+            {
+                userId: r8.id,
+                shopId: grocery.id,
+                rating: 4,
+                comment:
+                    'Fresh produce, good prices. The orange juice is really fresh.',
+            },
             // Butcher (3 reviews)
-            { userId: r3.id, shopId: butcher.id,  rating: 5, comment: 'Incredibly fresh meat. Best butcher in the compound, hands down!' },
-            { userId: r8.id, shopId: butcher.id,  rating: 5, comment: 'The beef steak was restaurant quality. Perfectly cut and very fresh.' },
-            { userId: r5.id, shopId: butcher.id,  rating: 4, comment: 'Lamb chops were excellent, will order again. Quick delivery too.' },
+            {
+                userId: r3.id,
+                shopId: butcher.id,
+                rating: 5,
+                comment:
+                    'Incredibly fresh meat. Best butcher in the compound, hands down!',
+            },
+            {
+                userId: r8.id,
+                shopId: butcher.id,
+                rating: 5,
+                comment:
+                    'The beef steak was restaurant quality. Perfectly cut and very fresh.',
+            },
+            {
+                userId: r5.id,
+                shopId: butcher.id,
+                rating: 4,
+                comment:
+                    'Lamb chops were excellent, will order again. Quick delivery too.',
+            },
             // Services (2 reviews)
-            { userId: r3.id, shopId: services.id, rating: 5, comment: 'AC cleaning was thorough and professional. Very happy with the result.' },
-            { userId: r4.id, shopId: services.id, rating: 4, comment: 'Furniture assembly was done well and quickly. Good value for money.' },
+            {
+                userId: r3.id,
+                shopId: services.id,
+                rating: 5,
+                comment:
+                    'AC cleaning was thorough and professional. Very happy with the result.',
+            },
+            {
+                userId: r4.id,
+                shopId: services.id,
+                rating: 4,
+                comment:
+                    'Furniture assembly was done well and quickly. Good value for money.',
+            },
             // Health (3 reviews)
-            { userId: r5.id, shopId: health.id,   rating: 5, comment: 'Love the organic selection. Quinoa and honey are top quality.' },
-            { userId: r2.id, shopId: health.id,   rating: 5, comment: 'The protein powder is great quality and cheaper than outside. Love it!' },
-            { userId: r6.id, shopId: health.id,   rating: 4, comment: 'Medjool dates are the best I have had. Almond butter is delicious too.' },
+            {
+                userId: r5.id,
+                shopId: health.id,
+                rating: 5,
+                comment:
+                    'Love the organic selection. Quinoa and honey are top quality.',
+            },
+            {
+                userId: r2.id,
+                shopId: health.id,
+                rating: 5,
+                comment:
+                    'The protein powder is great quality and cheaper than outside. Love it!',
+            },
+            {
+                userId: r6.id,
+                shopId: health.id,
+                rating: 4,
+                comment:
+                    'Medjool dates are the best I have had. Almond butter is delicious too.',
+            },
         ],
     });
 
@@ -452,7 +1347,7 @@ async function main() {
         data: {
             title: 'Parking Rules Reminder',
             titleAr: 'تذكير بقواعد انتظار السيارات',
-            body: 'Please be reminded that parking in fire lanes, blocking emergency exits, or occupying another resident\'s designated spot is strictly prohibited. Violating vehicles will be towed at the owner\'s expense.',
+            body: "Please be reminded that parking in fire lanes, blocking emergency exits, or occupying another resident's designated spot is strictly prohibited. Violating vehicles will be towed at the owner's expense.",
             bodyAr: 'نذكركم بأن وقوف السيارات في ممرات الحريق وحجب مخارج الطوارئ واحتلال مواقف الآخرين محظور تماماً. ستُسحب المركبات المخالفة على نفقة صاحبها.',
             category: AnnouncementCategory.GENERAL,
             publishedAt: new Date('2026-03-10'),
@@ -482,34 +1377,127 @@ async function main() {
     // ── Comments ───────────────────────────────────────────────────────────────
     await db.comment.createMany({
         data: [
-            { body: 'Great news! This will make compound life so much easier!', userId: r1.id, announcementId: ann1.id },
-            { body: 'Finally! A proper app for our compound. Very well designed.', userId: r2.id, announcementId: ann1.id },
-            { body: 'Just downloaded it. The ordering system is seamless!', userId: r5.id, announcementId: ann1.id },
-            { body: 'Love the Arabic support. Very thoughtful!', userId: r8.id, announcementId: ann1.id },
-            { body: 'So excited for the Eid celebration! Will bring the whole family.', userId: r3.id, announcementId: ann2.id },
-            { body: 'Will there be traditional food stalls? That would be amazing.', userId: r6.id, announcementId: ann2.id },
-            { body: 'Can\'t wait! The last Eid party was fantastic.', userId: r7.id, announcementId: ann2.id },
-            { body: 'Thanks for the advance notice about the water. Very considerate.', userId: r4.id, announcementId: ann3.id },
-            { body: 'I will make sure to fill up water bottles the night before. Thanks!', userId: r2.id, announcementId: ann3.id },
-            { body: 'Great upgrade! Feeling safer with the new camera coverage.', userId: r1.id, announcementId: ann4.id },
-            { body: 'This is long overdue. Thank you management!', userId: r3.id, announcementId: ann4.id },
-            { body: 'Perfect timing for summer. The kids will love the extended pool hours!', userId: r5.id, announcementId: ann5.id },
-            { body: 'This is great news for working parents like me. Thank you!', userId: r2.id, announcementId: ann5.id },
-            { body: 'About time someone addressed the parking issue seriously!', userId: r4.id, announcementId: ann6.id },
-            { body: 'The playground looks amazing! My kids were so excited when they saw it.', userId: r6.id, announcementId: ann7.id },
-            { body: 'Finally a proper play area for the little ones. Wonderful addition!', userId: r8.id, announcementId: ann7.id },
-            { body: 'Eid Mubarak to all! Great to know shops will be open as normal.', userId: r7.id, announcementId: ann8.id },
+            {
+                body: 'Great news! This will make compound life so much easier!',
+                userId: r1.id,
+                announcementId: ann1.id,
+            },
+            {
+                body: 'Finally! A proper app for our compound. Very well designed.',
+                userId: r2.id,
+                announcementId: ann1.id,
+            },
+            {
+                body: 'Just downloaded it. The ordering system is seamless!',
+                userId: r5.id,
+                announcementId: ann1.id,
+            },
+            {
+                body: 'Love the Arabic support. Very thoughtful!',
+                userId: r8.id,
+                announcementId: ann1.id,
+            },
+            {
+                body: 'So excited for the Eid celebration! Will bring the whole family.',
+                userId: r3.id,
+                announcementId: ann2.id,
+            },
+            {
+                body: 'Will there be traditional food stalls? That would be amazing.',
+                userId: r6.id,
+                announcementId: ann2.id,
+            },
+            {
+                body: "Can't wait! The last Eid party was fantastic.",
+                userId: r7.id,
+                announcementId: ann2.id,
+            },
+            {
+                body: 'Thanks for the advance notice about the water. Very considerate.',
+                userId: r4.id,
+                announcementId: ann3.id,
+            },
+            {
+                body: 'I will make sure to fill up water bottles the night before. Thanks!',
+                userId: r2.id,
+                announcementId: ann3.id,
+            },
+            {
+                body: 'Great upgrade! Feeling safer with the new camera coverage.',
+                userId: r1.id,
+                announcementId: ann4.id,
+            },
+            {
+                body: 'This is long overdue. Thank you management!',
+                userId: r3.id,
+                announcementId: ann4.id,
+            },
+            {
+                body: 'Perfect timing for summer. The kids will love the extended pool hours!',
+                userId: r5.id,
+                announcementId: ann5.id,
+            },
+            {
+                body: 'This is great news for working parents like me. Thank you!',
+                userId: r2.id,
+                announcementId: ann5.id,
+            },
+            {
+                body: 'About time someone addressed the parking issue seriously!',
+                userId: r4.id,
+                announcementId: ann6.id,
+            },
+            {
+                body: 'The playground looks amazing! My kids were so excited when they saw it.',
+                userId: r6.id,
+                announcementId: ann7.id,
+            },
+            {
+                body: 'Finally a proper play area for the little ones. Wonderful addition!',
+                userId: r8.id,
+                announcementId: ann7.id,
+            },
+            {
+                body: 'Eid Mubarak to all! Great to know shops will be open as normal.',
+                userId: r7.id,
+                announcementId: ann8.id,
+            },
         ],
     });
 
     // ── Reports ────────────────────────────────────────────────────────────────
     await db.report.createMany({
         data: [
-            { title: 'Q1 2026 Financial Report',        titleAr: 'التقرير المالي للربع الأول 2026',      pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf', publishedAt: new Date('2026-04-01') },
-            { title: 'Q4 2025 Financial Report',        titleAr: 'التقرير المالي للربع الرابع 2025',     pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf', publishedAt: new Date('2026-01-10') },
-            { title: 'Q3 2025 Financial Report',        titleAr: 'التقرير المالي للربع الثالث 2025',     pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf', publishedAt: new Date('2025-10-05') },
-            { title: 'Annual Maintenance Plan 2026',    titleAr: 'خطة الصيانة السنوية 2026',             pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf', publishedAt: new Date('2026-01-20') },
-            { title: 'Security Audit Report 2025',      titleAr: 'تقرير تدقيق الأمن 2025',               pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf', publishedAt: new Date('2025-12-31') },
+            {
+                title: 'Q1 2026 Financial Report',
+                titleAr: 'التقرير المالي للربع الأول 2026',
+                pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf',
+                publishedAt: new Date('2026-04-01'),
+            },
+            {
+                title: 'Q4 2025 Financial Report',
+                titleAr: 'التقرير المالي للربع الرابع 2025',
+                pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf',
+                publishedAt: new Date('2026-01-10'),
+            },
+            {
+                title: 'Q3 2025 Financial Report',
+                titleAr: 'التقرير المالي للربع الثالث 2025',
+                pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf',
+                publishedAt: new Date('2025-10-05'),
+            },
+            {
+                title: 'Annual Maintenance Plan 2026',
+                titleAr: 'خطة الصيانة السنوية 2026',
+                pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf',
+                publishedAt: new Date('2026-01-20'),
+            },
+            {
+                title: 'Security Audit Report 2025',
+                titleAr: 'تقرير تدقيق الأمن 2025',
+                pdfUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/pdf/sample.pdf',
+                publishedAt: new Date('2025-12-31'),
+            },
         ],
     });
 
@@ -557,9 +1545,12 @@ async function main() {
             expiresAt: new Date('2026-03-01'),
             options: {
                 create: [
-                    { label: 'Yes, great idea!',         labelAr: 'نعم، فكرة رائعة!' },
-                    { label: 'No, not needed',           labelAr: 'لا، ليست ضرورية' },
-                    { label: 'Yes, but after the gym',   labelAr: 'نعم، لكن بعد الجيم' },
+                    { label: 'Yes, great idea!', labelAr: 'نعم، فكرة رائعة!' },
+                    { label: 'No, not needed', labelAr: 'لا، ليست ضرورية' },
+                    {
+                        label: 'Yes, but after the gym',
+                        labelAr: 'نعم، لكن بعد الجيم',
+                    },
                 ],
             },
         },
@@ -641,12 +1632,36 @@ async function main() {
 
     await db.electionVote.createMany({
         data: [
-            { userId: r1.id, electionId: election.id, candidateId: election.candidates[0]!.id },
-            { userId: r2.id, electionId: election.id, candidateId: election.candidates[1]!.id },
-            { userId: r3.id, electionId: election.id, candidateId: election.candidates[2]!.id },
-            { userId: r4.id, electionId: election.id, candidateId: election.candidates[0]!.id },
-            { userId: r5.id, electionId: election.id, candidateId: election.candidates[1]!.id },
-            { userId: r6.id, electionId: election.id, candidateId: election.candidates[0]!.id },
+            {
+                userId: r1.id,
+                electionId: election.id,
+                candidateId: election.candidates[0]!.id,
+            },
+            {
+                userId: r2.id,
+                electionId: election.id,
+                candidateId: election.candidates[1]!.id,
+            },
+            {
+                userId: r3.id,
+                electionId: election.id,
+                candidateId: election.candidates[2]!.id,
+            },
+            {
+                userId: r4.id,
+                electionId: election.id,
+                candidateId: election.candidates[0]!.id,
+            },
+            {
+                userId: r5.id,
+                electionId: election.id,
+                candidateId: election.candidates[1]!.id,
+            },
+            {
+                userId: r6.id,
+                electionId: election.id,
+                candidateId: election.candidates[0]!.id,
+            },
         ],
     });
 
@@ -695,32 +1710,95 @@ async function main() {
     });
 
     const fb5 = await db.feedback.create({
-        data: { category: FeedbackCategory.SUGGESTION, body: 'Can we add a dedicated bicycle parking rack near the main entrance? Many residents cycle and there is no safe place to lock bikes.', isAnonymous: false, status: FeedbackStatus.ACKNOWLEDGED, attachments: [], userId: r5.id },
+        data: {
+            category: FeedbackCategory.SUGGESTION,
+            body: 'Can we add a dedicated bicycle parking rack near the main entrance? Many residents cycle and there is no safe place to lock bikes.',
+            isAnonymous: false,
+            status: FeedbackStatus.ACKNOWLEDGED,
+            attachments: [],
+            userId: r5.id,
+        },
     });
     const fb6 = await db.feedback.create({
-        data: { category: FeedbackCategory.CLEANLINESS, body: 'The swimming pool changing rooms need more frequent cleaning. The floors are often wet and slippery, which is a safety hazard.', isAnonymous: true, status: FeedbackStatus.IN_PROGRESS, attachments: [], userId: r6.id },
+        data: {
+            category: FeedbackCategory.CLEANLINESS,
+            body: 'The swimming pool changing rooms need more frequent cleaning. The floors are often wet and slippery, which is a safety hazard.',
+            isAnonymous: true,
+            status: FeedbackStatus.IN_PROGRESS,
+            attachments: [],
+            userId: r6.id,
+        },
     });
     const fb7 = await db.feedback.create({
-        data: { category: FeedbackCategory.MAINTENANCE, body: 'The hallway lights on the 4th floor of Building D have been flickering for two weeks. This needs urgent attention as it is a safety concern at night.', isAnonymous: false, status: FeedbackStatus.SUBMITTED, attachments: [], userId: r7.id },
+        data: {
+            category: FeedbackCategory.MAINTENANCE,
+            body: 'The hallway lights on the 4th floor of Building D have been flickering for two weeks. This needs urgent attention as it is a safety concern at night.',
+            isAnonymous: false,
+            status: FeedbackStatus.SUBMITTED,
+            attachments: [],
+            userId: r7.id,
+        },
     });
     const fb8 = await db.feedback.create({
-        data: { category: FeedbackCategory.SUGGESTION, body: 'It would be great to have a communal BBQ area in the garden. Many residents would love a designated outdoor cooking space for family gatherings.', isAnonymous: false, status: FeedbackStatus.SUBMITTED, attachments: [], userId: r8.id },
+        data: {
+            category: FeedbackCategory.SUGGESTION,
+            body: 'It would be great to have a communal BBQ area in the garden. Many residents would love a designated outdoor cooking space for family gatherings.',
+            isAnonymous: false,
+            status: FeedbackStatus.SUBMITTED,
+            attachments: [],
+            userId: r8.id,
+        },
     });
 
     await db.feedbackReply.createMany({
         data: [
-            { body: 'Thank you for reporting this. Our maintenance team has been dispatched and will inspect the elevator tomorrow morning.', feedbackId: fb1.id, authorId: admin.id },
-            { body: 'We have resolved this issue. The security team has updated the gate protocol and added a nightly inspection routine.', feedbackId: fb3.id, authorId: admin.id },
-            { body: 'We acknowledge your report. A formal warning notice has been sent to the unit in question.', feedbackId: fb4.id, authorId: admin.id },
-            { body: 'Great suggestion! We are evaluating a bicycle rack installation near the main entrance and will update you soon.', feedbackId: fb5.id, authorId: admin.id },
-            { body: 'We have scheduled daily cleaning of the pool changing rooms effective immediately. Thank you for bringing this to our attention.', feedbackId: fb6.id, authorId: admin.id },
+            {
+                body: 'Thank you for reporting this. Our maintenance team has been dispatched and will inspect the elevator tomorrow morning.',
+                feedbackId: fb1.id,
+                authorId: admin.id,
+            },
+            {
+                body: 'We have resolved this issue. The security team has updated the gate protocol and added a nightly inspection routine.',
+                feedbackId: fb3.id,
+                authorId: admin.id,
+            },
+            {
+                body: 'We acknowledge your report. A formal warning notice has been sent to the unit in question.',
+                feedbackId: fb4.id,
+                authorId: admin.id,
+            },
+            {
+                body: 'Great suggestion! We are evaluating a bicycle rack installation near the main entrance and will update you soon.',
+                feedbackId: fb5.id,
+                authorId: admin.id,
+            },
+            {
+                body: 'We have scheduled daily cleaning of the pool changing rooms effective immediately. Thank you for bringing this to our attention.',
+                feedbackId: fb6.id,
+                authorId: admin.id,
+            },
         ],
     });
 
     console.log('✓ Feedback & replies created');
 
     // ── Notification Preferences ───────────────────────────────────────────────
-    const allUserIds = [admin.id, r1.id, r2.id, r3.id, r4.id, r5.id, r6.id, r7.id, r8.id, m1.id, m2.id, m3.id, m4.id, m5.id];
+    const allUserIds = [
+        admin.id,
+        r1.id,
+        r2.id,
+        r3.id,
+        r4.id,
+        r5.id,
+        r6.id,
+        r7.id,
+        r8.id,
+        m1.id,
+        m2.id,
+        m3.id,
+        m4.id,
+        m5.id,
+    ];
     const prefTypes = Object.values(NotificationType);
     for (const userId of allUserIds) {
         await db.notificationPreference.createMany({
@@ -731,21 +1809,156 @@ async function main() {
     // ── Notifications ──────────────────────────────────────────────────────────
     await db.notification.createMany({
         data: [
-            { userId: r1.id, type: NotificationType.ORDER_UPDATE,   title: 'Order Delivered!',        titleAr: 'تم تسليم طلبك!',           body: 'Your order from The Brew Corner has been delivered.',         bodyAr: 'تم تسليم طلبك من ركن القهوة.',                isRead: true,  data: { orderId: order1.id } },
-            { userId: r1.id, type: NotificationType.ORDER_UPDATE,   title: 'Order Delivered!',        titleAr: 'تم تسليم طلبك!',           body: 'Your order from Al Baraka Grocery has been delivered.',        bodyAr: 'تم تسليم طلبك من بقالة البركة.',               isRead: false, data: { orderId: order9.id } },
-            { userId: r1.id, type: NotificationType.FEEDBACK_UPDATE,title: 'Feedback Update',         titleAr: 'تحديث على بلاغك',          body: 'The admin responded to your elevator maintenance report.',      bodyAr: 'رد المسؤول على بلاغك المتعلق بالمصعد.',       isRead: false, data: { feedbackId: fb1.id } },
-            { userId: r2.id, type: NotificationType.ANNOUNCEMENT,   title: 'New Announcement',        titleAr: 'إعلان جديد',               body: 'Eid Al-Fitr celebration party details have been posted.',       bodyAr: 'تم نشر تفاصيل حفل عيد الفطر.',                isRead: true,  data: { announcementId: ann2.id } },
-            { userId: r2.id, type: NotificationType.ORDER_UPDATE,   title: 'Order is Preparing',      titleAr: 'طلبك قيد التحضير',         body: 'Al Baraka Grocery is preparing your order.',                   bodyAr: 'بقالة البركة تحضّر طلبك الآن.',               isRead: false, data: { orderId: order2.id } },
-            { userId: r3.id, type: NotificationType.ORDER_UPDATE,   title: 'Order Placed',            titleAr: 'تم استلام طلبك',           body: 'Al Salam Butcher has received your order.',                    bodyAr: 'استلمت جزارة السلام طلبك.',                   isRead: true,  data: { orderId: order3.id } },
-            { userId: r3.id, type: NotificationType.ELECTION,       title: 'Election Opens Soon',     titleAr: 'الانتخابات تبدأ قريباً',    body: 'The Residents Committee Election 2025 is now open for voting.', bodyAr: 'انتخابات مجلس السكان 2025 مفتوحة الآن للتصويت.', isRead: false, data: {} },
-            { userId: r4.id, type: NotificationType.POLL,           title: 'New Poll Available',      titleAr: 'استطلاع جديد',             body: 'Vote on the best day for compound cleaning!',                  bodyAr: 'صوّت على أفضل يوم لتنظيف المجمع!',           isRead: true,  data: { pollId: poll1.id } },
-            { userId: r4.id, type: NotificationType.ORDER_UPDATE,   title: 'Order Confirmed',         titleAr: 'تم تأكيد طلبك',            body: 'The Brew Corner confirmed your order.',                         bodyAr: 'ركن القهوة أكّد طلبك.',                       isRead: false, data: { orderId: order4.id } },
-            { userId: r5.id, type: NotificationType.ORDER_UPDATE,   title: 'Order On the Way!',       titleAr: 'طلبك في الطريق إليك!',     body: 'Green Basket is on the way to deliver your order.',            bodyAr: 'السلة الخضراء في طريقها لتوصيل طلبك.',       isRead: false, data: { orderId: order5.id } },
-            { userId: r6.id, type: NotificationType.ORDER_UPDATE,   title: 'Order Delivered!',        titleAr: 'تم تسليم طلبك!',           body: 'Your order from The Brew Corner has been delivered.',          bodyAr: 'تم تسليم طلبك من ركن القهوة.',                isRead: false, data: { orderId: order6.id } },
-            { userId: r6.id, type: NotificationType.FEEDBACK_UPDATE,title: 'Feedback Update',         titleAr: 'تحديث على بلاغك',          body: 'The admin responded to your pool cleaning report.',             bodyAr: 'رد المسؤول على بلاغك المتعلق بالمسبح.',      isRead: false, data: { feedbackId: fb6.id } },
-            { userId: r7.id, type: NotificationType.ORDER_UPDATE,   title: 'Order Delivered!',        titleAr: 'تم تسليم طلبك!',           body: 'Your order from Al Baraka Grocery has been delivered.',        bodyAr: 'تم تسليم طلبك من بقالة البركة.',               isRead: true,  data: { orderId: order7.id } },
-            { userId: r8.id, type: NotificationType.ORDER_UPDATE,   title: 'Order Confirmed',         titleAr: 'تم تأكيد طلبك',            body: 'Al Salam Butcher confirmed your order.',                       bodyAr: 'جزارة السلام أكّدت طلبك.',                    isRead: false, data: { orderId: order8.id } },
-            { userId: r8.id, type: NotificationType.ANNOUNCEMENT,   title: 'New Playground Ready!',   titleAr: 'الملعب الجديد جاهز!',      body: 'The new playground equipment has been installed in the garden.', bodyAr: 'تم تركيب معدات الملعب الجديدة في الحديقة.', isRead: false, data: { announcementId: ann7.id } },
+            {
+                userId: r1.id,
+                type: NotificationType.ORDER_UPDATE,
+                title: 'Order Delivered!',
+                titleAr: 'تم تسليم طلبك!',
+                body: 'Your order from The Brew Corner has been delivered.',
+                bodyAr: 'تم تسليم طلبك من ركن القهوة.',
+                isRead: true,
+                data: { orderId: order1.id },
+            },
+            {
+                userId: r1.id,
+                type: NotificationType.ORDER_UPDATE,
+                title: 'Order Delivered!',
+                titleAr: 'تم تسليم طلبك!',
+                body: 'Your order from Al Baraka Grocery has been delivered.',
+                bodyAr: 'تم تسليم طلبك من بقالة البركة.',
+                isRead: false,
+                data: { orderId: order9.id },
+            },
+            {
+                userId: r1.id,
+                type: NotificationType.FEEDBACK_UPDATE,
+                title: 'Feedback Update',
+                titleAr: 'تحديث على بلاغك',
+                body: 'The admin responded to your elevator maintenance report.',
+                bodyAr: 'رد المسؤول على بلاغك المتعلق بالمصعد.',
+                isRead: false,
+                data: { feedbackId: fb1.id },
+            },
+            {
+                userId: r2.id,
+                type: NotificationType.ANNOUNCEMENT,
+                title: 'New Announcement',
+                titleAr: 'إعلان جديد',
+                body: 'Eid Al-Fitr celebration party details have been posted.',
+                bodyAr: 'تم نشر تفاصيل حفل عيد الفطر.',
+                isRead: true,
+                data: { announcementId: ann2.id },
+            },
+            {
+                userId: r2.id,
+                type: NotificationType.ORDER_UPDATE,
+                title: 'Order is Preparing',
+                titleAr: 'طلبك قيد التحضير',
+                body: 'Al Baraka Grocery is preparing your order.',
+                bodyAr: 'بقالة البركة تحضّر طلبك الآن.',
+                isRead: false,
+                data: { orderId: order2.id },
+            },
+            {
+                userId: r3.id,
+                type: NotificationType.ORDER_UPDATE,
+                title: 'Order Placed',
+                titleAr: 'تم استلام طلبك',
+                body: 'Al Salam Butcher has received your order.',
+                bodyAr: 'استلمت جزارة السلام طلبك.',
+                isRead: true,
+                data: { orderId: order3.id },
+            },
+            {
+                userId: r3.id,
+                type: NotificationType.ELECTION,
+                title: 'Election Opens Soon',
+                titleAr: 'الانتخابات تبدأ قريباً',
+                body: 'The Residents Committee Election 2025 is now open for voting.',
+                bodyAr: 'انتخابات مجلس السكان 2025 مفتوحة الآن للتصويت.',
+                isRead: false,
+                data: {},
+            },
+            {
+                userId: r4.id,
+                type: NotificationType.POLL,
+                title: 'New Poll Available',
+                titleAr: 'استطلاع جديد',
+                body: 'Vote on the best day for compound cleaning!',
+                bodyAr: 'صوّت على أفضل يوم لتنظيف المجمع!',
+                isRead: true,
+                data: { pollId: poll1.id },
+            },
+            {
+                userId: r4.id,
+                type: NotificationType.ORDER_UPDATE,
+                title: 'Order Confirmed',
+                titleAr: 'تم تأكيد طلبك',
+                body: 'The Brew Corner confirmed your order.',
+                bodyAr: 'ركن القهوة أكّد طلبك.',
+                isRead: false,
+                data: { orderId: order4.id },
+            },
+            {
+                userId: r5.id,
+                type: NotificationType.ORDER_UPDATE,
+                title: 'Order On the Way!',
+                titleAr: 'طلبك في الطريق إليك!',
+                body: 'Green Basket is on the way to deliver your order.',
+                bodyAr: 'السلة الخضراء في طريقها لتوصيل طلبك.',
+                isRead: false,
+                data: { orderId: order5.id },
+            },
+            {
+                userId: r6.id,
+                type: NotificationType.ORDER_UPDATE,
+                title: 'Order Delivered!',
+                titleAr: 'تم تسليم طلبك!',
+                body: 'Your order from The Brew Corner has been delivered.',
+                bodyAr: 'تم تسليم طلبك من ركن القهوة.',
+                isRead: false,
+                data: { orderId: order6.id },
+            },
+            {
+                userId: r6.id,
+                type: NotificationType.FEEDBACK_UPDATE,
+                title: 'Feedback Update',
+                titleAr: 'تحديث على بلاغك',
+                body: 'The admin responded to your pool cleaning report.',
+                bodyAr: 'رد المسؤول على بلاغك المتعلق بالمسبح.',
+                isRead: false,
+                data: { feedbackId: fb6.id },
+            },
+            {
+                userId: r7.id,
+                type: NotificationType.ORDER_UPDATE,
+                title: 'Order Delivered!',
+                titleAr: 'تم تسليم طلبك!',
+                body: 'Your order from Al Baraka Grocery has been delivered.',
+                bodyAr: 'تم تسليم طلبك من بقالة البركة.',
+                isRead: true,
+                data: { orderId: order7.id },
+            },
+            {
+                userId: r8.id,
+                type: NotificationType.ORDER_UPDATE,
+                title: 'Order Confirmed',
+                titleAr: 'تم تأكيد طلبك',
+                body: 'Al Salam Butcher confirmed your order.',
+                bodyAr: 'جزارة السلام أكّدت طلبك.',
+                isRead: false,
+                data: { orderId: order8.id },
+            },
+            {
+                userId: r8.id,
+                type: NotificationType.ANNOUNCEMENT,
+                title: 'New Playground Ready!',
+                titleAr: 'الملعب الجديد جاهز!',
+                body: 'The new playground equipment has been installed in the garden.',
+                bodyAr: 'تم تركيب معدات الملعب الجديدة في الحديقة.',
+                isRead: false,
+                data: { announcementId: ann7.id },
+            },
         ],
     });
 
@@ -754,26 +1967,73 @@ async function main() {
     // ── Audit Logs ─────────────────────────────────────────────────────────────
     await db.auditLog.createMany({
         data: [
-            { userId: admin.id, action: 'CREATE_ANNOUNCEMENT', entity: 'Announcement', entityId: ann1.id, meta: { category: 'GENERAL' } },
-            { userId: admin.id, action: 'CREATE_ANNOUNCEMENT', entity: 'Announcement', entityId: ann2.id, meta: { category: 'EVENT' } },
-            { userId: admin.id, action: 'CREATE_ANNOUNCEMENT', entity: 'Announcement', entityId: ann7.id, meta: { category: 'NEWS' } },
-            { userId: admin.id, action: 'CREATE_POLL',         entity: 'Poll',         entityId: poll1.id, meta: {} },
-            { userId: admin.id, action: 'CREATE_POLL',         entity: 'Poll',         entityId: poll2.id, meta: {} },
-            { userId: admin.id, action: 'CREATE_POLL',         entity: 'Poll',         entityId: poll3.id, meta: {} },
-            { userId: admin.id, action: 'CREATE_ELECTION',     entity: 'Election',     entityId: election.id, meta: {} },
+            {
+                userId: admin.id,
+                action: 'CREATE_ANNOUNCEMENT',
+                entity: 'Announcement',
+                entityId: ann1.id,
+                meta: { category: 'GENERAL' },
+            },
+            {
+                userId: admin.id,
+                action: 'CREATE_ANNOUNCEMENT',
+                entity: 'Announcement',
+                entityId: ann2.id,
+                meta: { category: 'EVENT' },
+            },
+            {
+                userId: admin.id,
+                action: 'CREATE_ANNOUNCEMENT',
+                entity: 'Announcement',
+                entityId: ann7.id,
+                meta: { category: 'NEWS' },
+            },
+            {
+                userId: admin.id,
+                action: 'CREATE_POLL',
+                entity: 'Poll',
+                entityId: poll1.id,
+                meta: {},
+            },
+            {
+                userId: admin.id,
+                action: 'CREATE_POLL',
+                entity: 'Poll',
+                entityId: poll2.id,
+                meta: {},
+            },
+            {
+                userId: admin.id,
+                action: 'CREATE_POLL',
+                entity: 'Poll',
+                entityId: poll3.id,
+                meta: {},
+            },
+            {
+                userId: admin.id,
+                action: 'CREATE_ELECTION',
+                entity: 'Election',
+                entityId: election.id,
+                meta: {},
+            },
         ],
     });
 
     console.log('\n✅ Seed complete!');
-    console.log('   5 merchants | 8 residents | 5 shops | 42 products | 14 orders');
+    console.log(
+        '   5 merchants | 8 residents | 5 shops | 42 products | 14 orders'
+    );
     console.log('   16 reviews | 12 saved shops');
     console.log('   8 announcements | 17 comments | 5 reports');
-    console.log('   3 polls (18 votes) | 1 election with 3 candidates (6 votes)');
+    console.log(
+        '   3 polls (18 votes) | 1 election with 3 candidates (6 votes)'
+    );
     console.log('   8 feedback items (5 replies) | 15 notifications');
     console.log('   Notification preferences set for all 14 users');
-    console.log('\n   Admin:    admin@eastpark.app  /  HelloWorld#1234@');
-    console.log('   Merchant: merchant1–5@eastpark.app  /  Merchant#1234@');
-    console.log('   Resident: resident1–8@eastpark.app  /  Resident#1234@');
+    console.log('\n   Admin:    admin@eastpark.app');
+    console.log('   Merchant: merchant1–5@eastpark.app');
+    console.log('   Resident: resident1–8@eastpark.app');
+    console.log('   (Passwords set via SEED_*_PASSWORD env vars)');
 }
 
 main()

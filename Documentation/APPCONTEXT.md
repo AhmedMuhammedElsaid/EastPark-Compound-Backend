@@ -109,7 +109,7 @@ Includes: Auth, shops, products, orders, payments (Paymob), community (announcem
 | `eastpark-minio-init` | `minio/mc:latest` | — | One-shot: creates `eastpark-uploads` bucket |
 
 Named volumes: `eastpark-postgres-data`, `eastpark-redis-data`, `eastpark-minio-data`.
-MinIO credentials: `minioadmin` / `minioadmin`. Bucket: `eastpark-uploads`.
+MinIO credentials: set via `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` env vars (see `docker-compose.yml`). Bucket: `eastpark-uploads`.
 
 ---
 
@@ -117,7 +117,8 @@ MinIO credentials: `minioadmin` / `minioadmin`. Bucket: `eastpark-uploads`.
 
 | Variable | Dev Default | Required |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://postgres:master123@localhost:5432/eastpark` | Yes |
+| `POSTGRES_PASSWORD` | **Must set** (used by docker-compose + DATABASE_URL) | Yes |
+| `DATABASE_URL` | `postgresql://postgres:<POSTGRES_PASSWORD>@localhost:5432/eastpark` | Yes |
 | `REDIS_URL` | `redis://localhost:6379` | Yes |
 | `AUTH_ACCESS_TOKEN_SECRET` | **Must generate** (`openssl rand -base64 48`) | Yes |
 | `AUTH_REFRESH_TOKEN_SECRET` | **Must generate** (different from above) | Yes |
@@ -129,9 +130,14 @@ MinIO credentials: `minioadmin` / `minioadmin`. Bucket: `eastpark-uploads`.
 | `SMTP_USER` | (blank for dev) | Prod only |
 | `SMTP_PASS` | (blank for dev) | Prod only |
 | `EMAIL_FROM` | `noreply@eastpark.app` | Yes |
-| `SUPABASE_URL` | `http://localhost:9000` (MinIO) | Yes |
-| `SUPABASE_SERVICE_KEY` | `minioadmin` | Yes |
+| `SUPABASE_URL` | `http://localhost:9002` (MinIO) | Yes |
+| `SUPABASE_SERVICE_KEY` | **Must set** (same as `MINIO_ROOT_PASSWORD` for dev) | Yes |
 | `SUPABASE_BUCKET` | `eastpark-uploads` | Yes |
+| `MINIO_ROOT_USER` | `minioadmin` | Dev only |
+| `MINIO_ROOT_PASSWORD` | **Must set** (used by docker-compose) | Dev only |
+| `SEED_ADMIN_PASSWORD` | **Must set** (for `pnpm seed`) | Dev only |
+| `SEED_MERCHANT_PASSWORD` | **Must set** (for `pnpm seed`) | Dev only |
+| `SEED_RESIDENT_PASSWORD` | **Must set** (for `pnpm seed`) | Dev only |
 | `PAYMOB_API_KEY` | (blank) | Prod only |
 | `PAYMOB_HMAC_SECRET` | (blank) | Prod only |
 | `PAYMOB_INTEGRATION_ID` | (blank) | Prod only |

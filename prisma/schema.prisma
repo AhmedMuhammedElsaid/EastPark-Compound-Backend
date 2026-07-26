@@ -342,11 +342,12 @@ model Vote {
 }
 
 model Election {
-  id          String   @id @default(cuid())
-  title       String
-  titleAr     String
-  description String?
-  expiresAt   DateTime
+  id            String   @id @default(cuid())
+  title         String
+  titleAr       String
+  description   String?
+  descriptionAr String?
+  expiresAt     DateTime
   resultsOpen    Boolean                @default(false) // flipped by @Cron every 5min when expiresAt passed
   visibilityMode ElectionVisibilityMode @default(SEALED_UNTIL_DEADLINE)
   createdAt      DateTime               @default(now())

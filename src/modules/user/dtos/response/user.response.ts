@@ -73,11 +73,11 @@ export class UserResponseDto implements Partial<User> {
 
     @ApiHideProperty()
     @Exclude()
-    passwordHash: string;
+    passwordHash?: string;
 
     @ApiHideProperty()
     @Exclude()
-    pushToken: string | null;
+    pushToken?: string | null;
 }
 
 export class UserGetProfileResponseDto extends UserResponseDto {}

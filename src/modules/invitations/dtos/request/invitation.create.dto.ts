@@ -10,5 +10,5 @@ export class InvitationCreateDto {
 
     @ApiProperty({ enum: [Role.MERCHANT, Role.ADMIN] })
     @IsEnum([Role.MERCHANT, Role.ADMIN])
-    role: Role.MERCHANT | Role.ADMIN;
+    role: typeof Role.MERCHANT | typeof Role.ADMIN;
 }

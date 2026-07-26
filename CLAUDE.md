@@ -20,14 +20,28 @@ All reference files live in `Documentation/` — read these before exploring the
 
 ## Status
 
-✅ All 8 phases + all 6 gaps + wiring fixes + 2 full audit passes complete. Running locally since 2026-04-02. Branch: main. Last commit: `c7dfb01`.
+✅ **All 2026-07-19 audit blockers fixed (2026-07-26). Backend typecheck passes (exit 0) and full test suite is green (62/62, coverage 81.11% stmts / 77.5% funcs). Deployable pending prod secrets + `fly deploy`. See `backend_review.md` for the audit history.**
+
+✅ All 8 phases + all 6 gaps + wiring fixes + 2 full audit passes complete. Running locally since 2026-04-02. Branch: main.
+
+### Audit 2026-07-19 → all fixed 2026-07-26 (verified with Node v24 via nvm)
+- **BE-1 ✅ FIXED:** added `descriptionAr String?` to `Election` model (schema.prisma) — was a runtime Prisma crash + tsc error. Commit `42d6eaa`.
+- **BE-2 ✅ FIXED:** replaced the lone incremental migration with a single full baseline migration `00000000000000_init` (`prisma migrate diff --from-empty`) + set `migration_lock.toml` provider. `prisma migrate deploy` now builds a complete fresh DB. Commit `42d6eaa`.
+- **BE-3 ✅ FIXED:** `UserResponseDto` passwordHash/pushToken made optional (3 auth.service sites); invitation DTO uses `typeof Role.MERCHANT | typeof Role.ADMIN`. `pnpm typecheck` exits 0. Commit `5853834`.
+- **BE-4/5/6 ✅ FIXED:** added `CacheService` mock to `payments.service.spec.ts` — 62/62 tests pass, coverage 81.11%/77.5% (payments 29.87% → 64.5%). Commit `6b2c9c8`.
+- **BE-7 ✅ FIXED:** `test.yml` rewritten for pnpm + Prisma generate + typecheck/lint/test. Commit `4b0764f`.
+- **B-7 (from FE audit) ✅ FIXED:** new merchant self-service module (`src/modules/merchant/`) exposes `/merchant/shop|products|orders*`, resolving the caller's shop from the JWT — the mobile app's Merchant Tools now works (was all 404s). Commit `988e7c6`.
+- **✅ Corrected:** `DELETE /user` self-delete **is implemented** (`src/modules/user/controllers/user.public.controller.ts:62-69`) — old "pending" note was wrong.
+
+### Remaining before ship
+- `fly secrets set PAYMOB_INTEGRATION_ID=<val> PAYMOB_IFRAME_ID=<val>` then `fly deploy` (Docker CMD runs `prisma migrate deploy` — now safe with the baseline).
 
 ---
 
 ## Local Dev State (as of 2026-04-08)
 
 - **Docker services:** postgres + redis + mailpit + minio — all running (`pnpm docker:up`)
-- **Database:** schema pushed via `prisma db push` (no initial migration — only one migration existed and was incomplete)
+- **Database:** now has a full baseline migration `00000000000000_init` (2026-07-26). Fresh DBs build via `prisma migrate deploy`. (Historically the base schema was `db push`'d with only one incomplete incremental migration — fixed in BE-2.)
 - **Admin seeded:** `admin@eastpark.app` (password set via `SEED_ADMIN_PASSWORD` env var)
 - **`@fastify/static` installed** — required by SwaggerModule with Fastify adapter
 - **Swagger fix applied** — `@ApiParam` added to `PUT /notifications/preferences/:type` to fix circular dep on `NotificationType` enum

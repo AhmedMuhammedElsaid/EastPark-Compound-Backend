@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { CacheService } from 'src/common/cache/services/cache.service';
 import { DatabaseService } from 'src/common/database/services/database.service';
 import { PaymentsService } from 'src/modules/payments/payments.service';
 
@@ -99,6 +100,13 @@ const configService = {
     }),
 };
 
+const cache = {
+    exists: jest.fn().mockResolvedValue(false),
+    set: jest.fn().mockResolvedValue(undefined),
+    get: jest.fn(),
+    del: jest.fn(),
+};
+
 // ─── Test suite ───────────────────────────────────────────────────────────────
 
 describe('PaymentsService', () => {
@@ -111,6 +119,7 @@ describe('PaymentsService', () => {
             providers: [
                 PaymentsService,
                 { provide: DatabaseService, useValue: db },
+                { provide: CacheService, useValue: cache },
                 { provide: ConfigService, useValue: configService },
             ],
         }).compile();

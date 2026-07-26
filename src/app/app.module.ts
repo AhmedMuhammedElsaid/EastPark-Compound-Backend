@@ -7,6 +7,7 @@ import { AnnouncementsModule } from 'src/modules/announcements/announcements.mod
 import { InvitationsModule } from 'src/modules/invitations/invitations.module';
 import { FeedbackModule } from 'src/modules/feedback/feedback.module';
 import { GovernanceModule } from 'src/modules/governance/governance.module';
+import { MerchantModule } from 'src/modules/merchant/merchant.module';
 import { OrdersModule } from 'src/modules/orders/orders.module';
 import { NotificationsModule } from 'src/modules/notifications/notifications.module';
 import { PaymentsModule } from 'src/modules/payments/payments.module';
@@ -34,6 +35,7 @@ import { HealthController } from './controllers/health.controller';
         ShopsModule,
         ProductsModule,
         OrdersModule,
+        MerchantModule,
         UploadsModule,
 
         // Feature modules — Phase 4: Community Hub

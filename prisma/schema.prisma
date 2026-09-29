@@ -80,13 +80,20 @@ enum ElectionVisibilityMode {
   ADMIN_CONTROLLED
 }
 
+enum ResidentLeadStatus {
+  PENDING
+  INVITED
+  CONVERTED
+  REJECTED
+}
+
 // ─── Auth & Users ─────────────────────────────────────────────────────────────
 
 model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
-  phone        String?  @unique
+  phone        String?
   unitNumber   String?
   passwordHash String
   role         Role     @default(RESIDENT)
@@ -109,6 +116,7 @@ model User {
   notifications     Notification[]
   auditLogs         AuditLog[]
   invitations       Invitation[]   @relation("InvitedBy")
+  residentLeads     ResidentLead[] @relation("ResidentLeadUser")
 
   @@map("users")
 }
@@ -125,7 +133,34 @@ model Invitation {
   invitedById String
   invitedBy   User      @relation("InvitedBy", fields: [invitedById], references: [id])
 
+  @@index([invitedById])
   @@map("invitations")
+}
+
+// ─── Resident Leads ───────────────────────────────────────────────────────────
+
+model ResidentLead {
+  id          String             @id @default(cuid())
+  name        String
+  email       String
+  phone       String
+  building    String
+  floor       String
+  flatNumber  String
+  parking     String?
+  status      ResidentLeadStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  userId String?
+  user   User?   @relation("ResidentLeadUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([email])
+  @@index([building, floor, flatNumber])
+  @@index([userId])
+  @@map("resident_leads")
 }
 
 // ─── Shops & Products ─────────────────────────────────────────────────────────
@@ -154,6 +189,8 @@ model Shop {
   reviews  Review[]
   savedBy  SavedShop[]
 
+  @@index([merchantId])
+  @@index([category, createdAt])
   @@map("shops")
 }
 
@@ -166,6 +203,7 @@ model ShopPhoto {
   shopId String
   shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
+  @@index([shopId, order])
   @@map("shop_photos")
 }
 
@@ -187,6 +225,7 @@ model Product {
 
   orderItems OrderItem[]
 
+  @@index([shopId, isDeleted, createdAt])
   @@map("products")
 }
 
@@ -212,6 +251,9 @@ model Order {
 
   items OrderItem[]
 
+  @@index([residentId, createdAt])
+  @@index([shopId, createdAt])
+  @@index([status])
   @@map("orders")
 }
 
@@ -227,6 +269,8 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
+  @@index([orderId])
+  @@index([productId])
   @@map("order_items")
 }
 
@@ -244,6 +288,7 @@ model Review {
   shop   Shop   @relation(fields: [shopId], references: [id])
 
   @@unique([userId, shopId])
+  @@index([shopId, createdAt])
   @@map("reviews")
 }
 
@@ -286,6 +331,7 @@ model Comment {
   announcementId String
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
 
+  @@index([announcementId, createdAt])
   @@map("comments")
 }
 
@@ -338,6 +384,7 @@ model Vote {
   option   PollOption @relation(fields: [optionId], references: [id])
 
   @@id([userId, pollId])
+  @@index([pollId])
   @@map("votes")
 }
 
@@ -355,6 +402,7 @@ model Election {
   candidates Candidate[]
   votes      ElectionVote[]
 
+  @@index([expiresAt, resultsOpen])
   @@map("elections")
 }
 
@@ -370,6 +418,7 @@ model Candidate {
   election   Election       @relation(fields: [electionId], references: [id], onDelete: Cascade)
   votes      ElectionVote[]
 
+  @@index([electionId])
   @@map("candidates")
 }
 
@@ -384,6 +433,7 @@ model ElectionVote {
   candidate   Candidate @relation(fields: [candidateId], references: [id])
 
   @@id([userId, electionId])
+  @@index([electionId])
   @@map("election_votes")
 }
 
@@ -403,6 +453,9 @@ model Feedback {
   user    User            @relation(fields: [userId], references: [id])
   replies FeedbackReply[]
 
+  @@index([userId, createdAt])
+  @@index([category])
+  @@index([status])
   @@map("feedbacks")
 }
 
@@ -416,6 +469,7 @@ model FeedbackReply {
   authorId   String
   author     User     @relation(fields: [authorId], references: [id]) // admin who replied
 
+  @@index([feedbackId, createdAt])
   @@map("feedback_replies")
 }
 
@@ -446,6 +500,7 @@ model Notification {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
+  @@index([userId, isRead, createdAt])
   @@map("notifications")
 }
 
@@ -462,5 +517,6 @@ model AuditLog {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
+  @@index([userId])
   @@map("audit_logs")
 }

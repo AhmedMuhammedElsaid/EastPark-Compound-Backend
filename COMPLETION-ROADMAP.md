@@ -6,15 +6,43 @@
 
 Item format: `[P0|P1|P2] — title — file:line — what to change — how to verify`
 
-> **Update 2026-09-29 (later the same day).** A first implementation pass has landed against this
-> report. Fixed and in the working tree: the Docker build blockers (2e), `APP_ENV` + CORS + the
-> health check (2a/2d), the `getOrThrow` empty-string defaults (2b), the `prisma.seed` hook (1b),
-> the `ResidentLead` model + `User.phone` unique removal + all 26 indexes (1a/1b), the new
-> `ResidentsModule`, and the frontend `tsconfig.json` type-check blocker (3c).
-> **Not yet done:** the Float→Decimal migration (1b), the webhook amount check (Part 4), the
-> `directUrl` pooling config (1b), the EAS env vars and submit block (3a/3b), and the whole of
-> Stage 7 (test debt). Priority has shifted: **`eastpark-web-app` ships first** — see
-> `../restructure.md` for the deferred monorepo work.
+> **Update 2026-09-29 (later the same day) — first implementation pass COMMITTED.**
+> Backend commits `ef82e2c`, `f02651d`, `67c05be`, `986464e`, `c7e9c29`, `dd35173`, `0e97846`
+> on `main`. Verified before committing: `pnpm typecheck` exit 0, `pnpm lint:check` exit 0
+> (6 pre-existing warnings), **`pnpm test` 62/62 passing**.
+>
+> **Done (backend):** Docker build blockers (2e) · `APP_ENV` + CORS + health check (2a/2d) ·
+> `getOrThrow` empty-string defaults (2b) · `prisma.seed` hook (1b) · `ResidentLead` +
+> `User.phone` unique removal + 26 indexes (1a/1b) · `ResidentsModule` · **a migration covering
+> all of it**.
+>
+> **Done (frontend — commits `9fef982`, `9743231`, `03d13bd` on `main`):** the `tsconfig.json`
+> type-check blocker (3c) — type-checking now genuinely runs (3280 files, exit 0) and the
+> codebase was clean underneath, so the *tooling* was the bug. Lint went 3915 errors → 37
+> problems, all deliberately deferred (`max-lines-per-function`, `no-array-index-key` — both
+> design decisions). Markdown excluded from ESLint. Tests still **41/41**.
+> Four real user-facing bugs fell out of the now-working lint:
+> 1. `merchant.pending_count_waiting` rendered the literal `{{n}}` instead of the order count —
+>    the i18n validator rejects single-character interpolation names, so it never substituted.
+> 2. `checkbox.tsx:166` used `bg-primary-300`, absent from the token scale — the checked
+>    checkbox's inner dot had no background at all.
+> 3. `use-auth-rehydration.ts` suppressed `exhaustive-deps` and omitted `dispatch`.
+> 4. A dead unused variable in the merchant menu delete handler.
+>
+> **Not done:** Float→Decimal (1b) · the webhook amount check (Part 4) · `directUrl` pooling (1b)
+> · EAS env vars and submit block (3a/3b) · Stage 7 test debt — including **zero tests on the new
+> `ResidentsModule`**, which is now a public unauthenticated write endpoint.
+>
+> **Two things verified by reasoning, NOT by execution** — the Docker daemon is unreachable in
+> this WSL environment and no database was available:
+> 1. `docker build` has never been run against the fixed Dockerfile.
+> 2. `prisma migrate deploy` has never been run against the new migration. The SQL was generated
+>    by `prisma migrate diff` and audited statement-by-statement (30 statements; the only
+>    destructive one is the intended `DROP INDEX users_phone_key`), but it has not been applied
+>    to a real database.
+>
+> Priority has shifted: **`eastpark-web-app` ships first.** See `../restructure.md` for the
+> deferred monorepo work.
 
 ---
 

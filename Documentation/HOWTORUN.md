@@ -256,13 +256,25 @@ SMTP_PASS=<Brevo → Settings → SMTP & API key>
 EMAIL_FROM=noreply@eastpark.app
 ```
 
-### 3 — Production database (Neon PostgreSQL)
+### 3 — Production database (Supabase PostgreSQL)
 
-Create free project at https://neon.tech (3 GB free):
+Same Supabase project as Storage — one free tier, 500 MB. Dashboard → **Connect**, copy both
+strings (they differ only in the port):
 
 ```env
-DATABASE_URL=postgresql://user:pass@ep-xxx.neon.tech/eastpark?sslmode=require
+# Transaction pooler — runtime queries
+DATABASE_URL=postgresql://postgres.<ref>:<url-encoded-pw>@<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+# Session pooler — migrations only (schema.prisma `directUrl`)
+DIRECT_DATABASE_URL=postgresql://postgres.<ref>:<url-encoded-pw>@<region>.pooler.supabase.com:5432/postgres
 ```
+
+Three silent failure modes:
+
+- **Pooler host only.** `db.<ref>.supabase.co` is IPv6-only (0 A records) and Fly VMs have no
+  public IPv4 egress — unreachable. `<region>.pooler.supabase.com` is IPv4.
+- **Percent-encode the password:** `#`→`%23` `@`→`%40` `:`→`%3A` `/`→`%2F`. An unencoded `#`
+  or `@` yields a valid-looking URL pointing at the wrong host.
+- **Username is `postgres.<project-ref>`**, not `postgres`.
 
 ### 4 — Production cache (Upstash Redis)
 
@@ -299,7 +311,8 @@ cd eastpark-backend
 fly auth login
 
 fly secrets set \
-  DATABASE_URL="postgresql://...@ep-xxx.neon.tech/eastpark?sslmode=require" \
+  DATABASE_URL="postgresql://postgres.<ref>:<enc-pw>@<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1" \
+  DIRECT_DATABASE_URL="postgresql://postgres.<ref>:<enc-pw>@<region>.pooler.supabase.com:5432/postgres" \
   REDIS_URL="rediss://default:xxx@your-endpoint.upstash.io:6379" \
   AUTH_ACCESS_TOKEN_SECRET="$(openssl rand -base64 48)" \
   AUTH_REFRESH_TOKEN_SECRET="$(openssl rand -base64 48)" \

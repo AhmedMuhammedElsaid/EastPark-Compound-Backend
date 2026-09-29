@@ -210,11 +210,20 @@ Confirmed: **zero `@@index` declarations across all 466 schema lines**, despite 
 
 Run as one migration: `pnpm prisma migrate dev --name add_missing_indexes`. Plain `CREATE INDEX` takes a SHARE lock blocking writes, and Prisma wraps migrations in a transaction so `CREATE INDEX CONCURRENTLY` is not available. At current volume the window is milliseconds — safe now. Against a populated production DB later, hand-edit the migration to run concurrently outside the transaction.
 
-#### No Neon pooling story
+#### ✅ RESOLVED 2026-09-30 (commit `e4bb326`) — pooling story + vendor change
 
-Verified: `grep -rn "directUrl\|pgbouncer\|connection_limit"` returns **zero matches** repo-wide, and `datasource db` (`schema.prisma:8-11`) declares only `url`.
+Was: `grep -rn "directUrl\|pgbouncer\|connection_limit"` returned **zero matches** repo-wide.
 
-- **[P1] — Add `directUrl` for migrations — `prisma/schema.prisma:8-11` — add `directUrl = env("DIRECT_DATABASE_URL")`; set `DATABASE_URL` to the Neon **pooled** endpoint (`-pooler`) with `?pgbouncer=true&connection_limit=1`, and `DIRECT_DATABASE_URL` to the unpooled one — verify: `pnpm prisma migrate deploy` succeeds against Neon and the app still serves traffic**
+**Postgres also moved Neon → Supabase.** Neon free allows 100 CU-hours/month; the Fly health check
+queries the DB every 15s (`health.controller.ts:24`) so compute never scale-to-zeros, costing ~183
+CU-hours/month — suspended around day 16 of every month. Supabase free is capacity-limited (500MB),
+not clock-limited, and Storage already lived there.
+
+- **[P1] ✅ DONE — `directUrl` added — `prisma/schema.prisma:8-15` — `DATABASE_URL` = Supabase transaction pooler `:6543` + `?pgbouncer=true&connection_limit=1`; `DIRECT_DATABASE_URL` = session pooler `:5432` — verify: `pnpm prisma migrate deploy` succeeds and the app still serves traffic**
+
+Connection-string traps (all fail silently) are documented in `README.md` step 5: pooler host only
+(`db.<ref>.supabase.co` is IPv6-only, Fly has no public IPv4 egress), percent-encode the password,
+and the pooler username is `postgres.<project-ref>`.
 
 Without this, `migrate deploy` runs through pgbouncer, where advisory locks and prepared statements misbehave. The Fly VM is 256MB with one shared CPU (`fly.toml:19-22`), so a low `connection_limit` is right.
 
@@ -226,7 +235,7 @@ Verified: `package.json` has a `seed` **script** (`"seed": "ts-node -r tsconfig-
 
 ### 1c. Part 1 ranking
 
-**Must fix before launch:** the piastres conversion (P0); `ResidentLead` + the two conversion-path fixes (P1, blocks the web app); Float→Decimal with the boundary mapping (P1, free now and a migration project later); the high-priority indexes (P1); `directUrl` (P1, or `migrate deploy` is unreliable against Neon).
+**Must fix before launch:** the piastres conversion (P0); `ResidentLead` + the two conversion-path fixes (P1, blocks the web app); Float→Decimal with the boundary mapping (P1, free now and a migration project later); the high-priority indexes (P1); `directUrl` (P1 — ✅ done, or `migrate deploy` is unreliable through the pooler).
 
 **Can wait:** low-priority indexes, the seed hook, the spec assertion.
 
@@ -475,7 +484,11 @@ The endpoint exists and is a **deep** check — `health.controller.ts:23-25` run
   path = "/health"
 ```
 
-Keep the deep DB check. With `min_machines_running = 1` and no replica, a machine that cannot reach Neon serves only errors, so failing the check is strictly better than staying in rotation. Redis is deliberately not part of it — an Upstash blip should not cycle the machine. `grace_period = "30s"` covers `migrate deploy` running before the listener opens.
+Keep the deep DB check. With `min_machines_running = 1` and no replica, a machine that cannot reach Postgres serves only errors, so failing the check is strictly better than staying in rotation. Redis is deliberately not part of it — an Upstash blip should not cycle the machine. `grace_period = "30s"` covers `migrate deploy` running before the listener opens.
+
+It has a second job on Supabase: free projects pause after **1 week of inactivity** and need a
+manual dashboard restore. A DB query every 15s means the project is never idle. Don't raise the
+interval to minutes-scale without confirming that still registers as activity.
 
 ### 2e. Dockerfile
 
@@ -562,7 +575,7 @@ Ordering rationale: nothing ships until the image builds, so the Dockerfile P0s 
 8. **Add `ResidentLead` + `ResidentLeadStatus`** — unblocks Prompt B. **Schema approved 2026-09-29** (see 1a). *(P1)*
 8b. **Drop `@unique` from `User.phone`** — `schema.prisma:89`; batch into the same migration as 8 and 9. *(P1)*
 9. **Add the high-priority indexes** — all 21 in one migration. *(P1, 1b)*
-10. **Add `directUrl`** and repoint `DATABASE_URL` at the Neon pooled endpoint. *(P1, 1b)*
+10. ✅ **`directUrl` added**; `DATABASE_URL` repointed at the Supabase transaction pooler. *(P1, 1b — done `e4bb326`)*
 11. **Widen the invitation role to `RESIDENT`** and persist `unitNumber`/`phone` in `acceptInvitation`. *(P1, 1a)*
 
 ### Stage 4 — Production configuration

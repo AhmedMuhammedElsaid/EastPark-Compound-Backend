@@ -39,15 +39,15 @@ Mobile App (Expo React Native)
                     │
        ┌────────────┼──────────┐
        ▼            ▼          ▼
-  Neon DB      Upstash     Supabase
-  (Prisma)     Redis       Storage
+  Supabase     Upstash     Supabase
+  Postgres     Redis       Storage
                     │
             Brevo SMTP   Expo Push
 ```
 
 | Layer | Dev (Docker Compose) | Prod (free tier) |
 |---|---|---|
-| Database | `postgres:16-alpine` | Neon (3 GB) |
+| Database | `postgres:16-alpine` | Supabase Postgres (500 MB) |
 | Cache / OTP | `redis:7-alpine` | Upstash Redis (10 K req/day) |
 | File storage | MinIO | Supabase Storage (1 GB) |
 | Email | Mailpit (SMTP UI) | Brevo SMTP (300/day) |
@@ -164,7 +164,8 @@ Full reference is in `.env.example`. Every variable is documented with inline co
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | Yes | Neon (prod) or `postgresql://...@localhost:5432/eastpark` (dev) |
+| `DATABASE_URL` | Yes | Supabase transaction pooler `:6543` (prod) or `postgresql://...@localhost:5432/eastpark` (dev) |
+| `DIRECT_DATABASE_URL` | Yes | Migrations only. Supabase session pooler `:5432` (prod); same as `DATABASE_URL` in dev |
 | `REDIS_URL` | Yes | `redis://localhost:6379` (dev) · `rediss://...upstash.io` (prod) |
 | `AUTH_ACCESS_TOKEN_SECRET` | Yes | JWT access token secret — min 32 chars |
 | `AUTH_REFRESH_TOKEN_SECRET` | Yes | JWT refresh token secret — must differ from access |

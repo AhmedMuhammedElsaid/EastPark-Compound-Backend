@@ -19,6 +19,11 @@ primary_region = "cdg"
 # Deep check — hits the DB via terminus. The controller is VERSION_NEUTRAL,
 # so the path is /health, NOT /v1/health despite the global URI versioning.
 # grace_period covers `prisma migrate deploy` running before the listener opens.
+#
+# The 15s DB query doubles as the Supabase keep-alive: free projects are paused
+# after 1 week of inactivity, and a paused project needs a MANUAL restore from
+# the dashboard. This check means the project is never idle. Do not raise the
+# interval past a few minutes without confirming that still counts as activity.
 [[http_service.checks]]
   grace_period = "30s"
   interval = "15s"

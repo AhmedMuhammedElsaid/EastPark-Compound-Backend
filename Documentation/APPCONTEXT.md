@@ -275,7 +275,7 @@ All routes are prefixed `/v1`. Auth endpoints rate-limited to 5 req/min.
 
 | Concern | Dev | Prod |
 |---|---|---|
-| Database | Docker `postgres:16-alpine` | Neon PostgreSQL (3GB free) |
+| Database | Docker `postgres:16-alpine` | Supabase PostgreSQL (500MB free) |
 | Cache | Docker `redis:7-alpine` | Upstash Redis (10K req/day free) |
 | File storage | Docker MinIO | Supabase Storage (1GB free) |
 | Email | Docker Mailpit | Brevo SMTP (300/day free) |

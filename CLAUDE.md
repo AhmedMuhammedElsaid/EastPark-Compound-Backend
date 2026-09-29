@@ -38,9 +38,15 @@ verified by reasoning only. If a deploy fails, look there first.
 
 **Open — see `COMPLETION-ROADMAP.md` for the full ranked list:** the Paymob webhook does not verify
 the paid amount (`payments.service.ts:135-149`) · money is still `Float` (schema.prisma:216/237/263;
-Decimal is a BREAKING API change without `.toNumber()` boundary mapping) · no `directUrl` for Neon ·
-`SMTP_HOST`/`SUPABASE_URL` missing from fly.toml · real whole-repo coverage is **12.44%**, not the
-headline 81.11% (that figure averages only the 5 files in `test/jest.json`).
+Decimal is a BREAKING API change without `.toNumber()` boundary mapping) · real whole-repo coverage
+is **12.44%**, not the headline 81.11% (that figure averages only the 5 files in `test/jest.json`).
+
+**2026-09-30 — Postgres moved from Neon to Supabase.** One vendor for DB + Storage, and Neon's free
+tier could not host this app: the Fly health check queries the DB every 15s, so the compute never
+scale-to-zeros, and always-on burns ~183 of the 100 free CU-hours/month — suspended around day 16,
+every month. Supabase free is capacity-limited (500MB), not clock-limited. `directUrl` added
+(`DIRECT_DATABASE_URL`, session pooler 5432); `SMTP_HOST`/`SUPABASE_URL` now in fly.toml.
+**Connection-string traps are in `README.md` step 5 — read before setting secrets.**
 
 Earlier: all 2026-07-19 audit blockers fixed 2026-07-26 — see `backend_review.md`.
 
@@ -137,7 +143,7 @@ All seed passwords are set via environment variables: `SEED_ADMIN_PASSWORD`, `SE
 |---|---|
 | Framework | NestJS + Fastify adapter (NOT Express) |
 | Package manager | pnpm |
-| ORM | Prisma + PostgreSQL (Neon free tier in prod) |
+| ORM | Prisma + PostgreSQL (Supabase free tier in prod) |
 | Cache | ioredis → Upstash Redis in prod (OTP, rate limiting, token blacklist) |
 | File storage | Supabase Storage (prod) / MinIO docker (dev) |
 | Email | Brevo SMTP (prod) / Mailpit docker (dev) |

@@ -8,7 +8,7 @@ export class InvitationCreateDto {
     @IsNotEmpty()
     email: string;
 
-    @ApiProperty({ enum: [Role.MERCHANT, Role.ADMIN] })
-    @IsEnum([Role.MERCHANT, Role.ADMIN])
-    role: typeof Role.MERCHANT | typeof Role.ADMIN;
+    @ApiProperty({ enum: [Role.RESIDENT, Role.MERCHANT, Role.ADMIN] })
+    @IsEnum([Role.RESIDENT, Role.MERCHANT, Role.ADMIN])
+    role: typeof Role.RESIDENT | typeof Role.MERCHANT | typeof Role.ADMIN;
 }

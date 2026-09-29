@@ -20,7 +20,29 @@ All reference files live in `Documentation/` — read these before exploring the
 
 ## Status
 
-✅ **All 2026-07-19 audit blockers fixed (2026-07-26). Backend typecheck passes (exit 0) and full test suite is green (62/62, coverage 81.11% stmts / 77.5% funcs). Deployable pending prod secrets + `fly deploy`. See `backend_review.md` for the audit history.**
+⚠️ **2026-09-29 — `docker build` and `prisma migrate deploy` have NEVER been run.** No Docker
+daemon and no database were reachable in the WSL environment where the fixes were made. Both are
+verified by reasoning only. If a deploy fails, look there first.
+
+✅ **2026-09-29 pass: 8 commits (`ef82e2c`…`43af496`), tree clean, nothing pushed.**
+`pnpm typecheck` exit 0 · `pnpm lint:check` exit 0 · **tests 101/101** (was 62/62).
+- Docker build **repaired** — it could not have succeeded before: the `prisma` CLI was a
+  devDependency (so the production image had no binary for `migrate deploy`), and `postinstall`
+  ran `prisma generate` before `prisma/` was copied. Also `exec` for SIGTERM, non-root user.
+- `ResidentLead` + `ResidentsModule` — public `POST /v1/residents/leads`, always 200, 5 req/min/IP,
+  idempotent dedupe. Backs the new `eastpark-web-app` form. 39 tests.
+- `User.phone @unique` **removed** (one phone belongs to an apartment, not a person),
+  26 indexes added (schema had zero), and **a migration** covering all of it.
+- `APP_ENV=production` in fly.toml — closes Swagger/CSP/CORS exposure. Health check on `/health`
+  (**not** `/v1/health` — the controller is `VERSION_NEUTRAL`).
+
+**Open — see `COMPLETION-ROADMAP.md` for the full ranked list:** the Paymob webhook does not verify
+the paid amount (`payments.service.ts:135-149`) · money is still `Float` (schema.prisma:216/237/263;
+Decimal is a BREAKING API change without `.toNumber()` boundary mapping) · no `directUrl` for Neon ·
+`SMTP_HOST`/`SUPABASE_URL` missing from fly.toml · real whole-repo coverage is **12.44%**, not the
+headline 81.11% (that figure averages only the 5 files in `test/jest.json`).
+
+Earlier: all 2026-07-19 audit blockers fixed 2026-07-26 — see `backend_review.md`.
 
 ✅ All 8 phases + all 6 gaps + wiring fixes + 2 full audit passes complete. Running locally since 2026-04-02. Branch: main.
 

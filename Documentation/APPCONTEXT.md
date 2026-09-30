@@ -11,13 +11,20 @@
 - API: `https://eastpark-backend.fly.dev` on Fly.io `cdg`
 - Health: HTTP 200; Prisma `up`
 - `POST /v1/residents/leads`: HTTP 200; Supabase insert verified
+- Duplicate active unit: HTTP 409; atomically enforced by partial unique index
 - CORS from `https://eastpark-web-app.vercel.app`: HTTP 204 preflight
 - Remote Docker build and `prisma migrate deploy`: verified by execution
+- Prisma migration status: all 3 migrations applied
 - Database and file storage: Supabase
 
 Production startup required keeping `.swcrc` in the Docker context, skipping Husky scripts during
 the production install, explicitly generating Prisma, and replacing DTO Faker examples with static
 values so no dev-only dependency is loaded at runtime.
+
+Commit `a4ff04f` changed lead submission from contact-based idempotent updates to unit reservation.
+Any non-`REJECTED` lead for the same building/floor/flat blocks another submission. The service
+returns `residentLead.error.unitReserved`; a database `P2002` race maps to the same conflict.
+Rejected leads remain resubmittable. The focused suite passes 38/38 and the full suite 100/100.
 
 Operational follow-up: rotate credentials exposed during deployment and configure real Paymob
 credentials before enabling card payments. The resident lead endpoint is live and not blocked.
@@ -36,7 +43,7 @@ NestJS, Prisma, auth, and transport code stay in this repository.
 
 **All 8 phases + all 6 gaps + wiring fixes + post-audit patches: 100% complete. Production-ready.**
 
-Last commit: `c7dfb01`. Branch: `main`.
+Current duplicate-unit checkpoint: `a4ff04f`. Branch: `main`.
 
 Includes: Auth, shops, products, orders, payments (Paymob), community (announcements, polls, elections, feedback), notifications, invitations, Paymob 3-step initiation + HMAC-SHA512 webhook, Socket.io `/orders` namespace, Expo Push inline, 88% test coverage, Docker Compose, Swagger.
 
@@ -68,9 +75,7 @@ Includes: Auth, shops, products, orders, payments (Paymob), community (announcem
 - `ShopsService.findAll/update` — `averageRating` was always `null`; `findAll` now does a single batch `groupBy` after fetching shops; `update` does `aggregate` after save
 - `ShopPhotoResponseDto` — `isPrimary: boolean` added; derived in service as `index === 0` on the already-sorted photo array
 
-**Remaining user actions (manual — require external accounts):**
-1. `fly secrets set PAYMOB_INTEGRATION_ID=<val> PAYMOB_IFRAME_ID=<val>` from this directory
-2. `fly deploy` from this directory
+**Remaining user action:** configure real Paymob credentials before enabling card payments.
 
 ---
 

@@ -20,6 +20,18 @@ All reference files live in `Documentation/` — read these before exploring the
 
 ## Status
 
+### Active-unit reservation — deployed 2026-09-30
+
+- Commit `a4ff04f` is on `main` and `origin/main`.
+- `POST /v1/residents/leads` returns HTTP 409 when `(building, floor, flatNumber)` already has a
+  non-`REJECTED` lead, regardless of submitted email or phone.
+- Partial unique index `resident_leads_active_unit_key` closes the concurrent-request race while
+  allowing a rejected unit lead to be submitted again. Prisma `P2002` maps to the same conflict.
+- Production Supabase reports all 3 migrations applied. Fly release v4 is healthy in `cdg`; the
+  health endpoint returns HTTP 200 with Prisma `up`.
+- Validation: focused resident suite 38/38; complete backend suite 100/100; Prisma validation,
+  strict typecheck, and lint pass (6 existing warnings, 0 errors).
+
 ### Web parity consumer — 2026-09-30
 
 The deployed `eastpark-web-app` is expanding toward mobile feature parity. It uses same-origin Next.js
@@ -52,8 +64,8 @@ This does not block `POST /v1/residents/leads`.
 - Docker build **repaired** — it could not have succeeded before: the `prisma` CLI was a
   devDependency (so the production image had no binary for `migrate deploy`), and `postinstall`
   ran `prisma generate` before `prisma/` was copied. Also `exec` for SIGTERM, non-root user.
-- `ResidentLead` + `ResidentsModule` — public `POST /v1/residents/leads`, always 200, 5 req/min/IP,
-  idempotent dedupe. Backs the new `eastpark-web-app` form. 39 tests.
+- `ResidentLead` + `ResidentsModule` — public `POST /v1/residents/leads`, 5 req/min/IP, with
+  database-backed active-unit reservation. Backs the `eastpark-web-app` form. 38 focused tests.
 - `User.phone @unique` **removed** (one phone belongs to an apartment, not a person),
   26 indexes added (schema had zero), and **a migration** covering all of it.
 - `APP_ENV=production` in fly.toml — closes Swagger/CSP/CORS exposure. Health check on `/health`

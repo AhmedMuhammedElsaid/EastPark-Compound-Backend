@@ -2,7 +2,7 @@
 
 > **EastPark** is a residential compound super-app for the MENA region.
 > This document covers the **NestJS 11 + Fastify** backend API only.
-> For the frontend setup, see `../eastpark-frontend/HOWTORUN.md`.
+> For the frontend setup, see `../../mobile/Documentation/HOWTORUN.md`.
 > For full-stack local dev, run both simultaneously.
 
 ---
@@ -33,7 +33,7 @@
 One command starts everything — Docker services, migrations, seed, dev server:
 
 ```bash
-cd eastpark-backend
+cd apps/backend
 pnpm install
 cp .env.example .env
 # Edit .env — fill in AUTH_ACCESS_TOKEN_SECRET and AUTH_REFRESH_TOKEN_SECRET (see Step 2)
@@ -47,7 +47,7 @@ pnpm dev:setup
 ### Step 1 — Install dependencies
 
 ```bash
-cd eastpark-backend
+cd apps/backend
 pnpm install
 ```
 
@@ -306,7 +306,7 @@ SUPABASE_BUCKET=eastpark-uploads
 Region: `cdg` (Paris). Min 1 machine always on — no cold starts, WebSocket-friendly.
 
 ```bash
-cd eastpark-backend
+cd apps/backend
 
 fly auth login
 
@@ -360,7 +360,7 @@ When developing end-to-end, run this backend alongside the frontend.
 ### Terminal 1 — Backend (this app)
 
 ```bash
-cd /mnt/c/Unite/EastPark-App/eastpark-backend
+cd /mnt/c/Unite/EastPark-App/apps/backend
 docker compose up -d         # starts postgres, redis, mailpit, minio
 pnpm start:dev               # NestJS on http://localhost:3000
 ```
@@ -368,7 +368,7 @@ pnpm start:dev               # NestJS on http://localhost:3000
 ### Terminal 2 — Frontend
 
 ```bash
-cd /mnt/c/Unite/EastPark-App/eastpark-frontend
+cd /mnt/c/Unite/EastPark-App/apps/mobile
 # Ensure EXPO_PUBLIC_API_URL=http://localhost:3000/v1 in .env.local
 pnpm start
 ```

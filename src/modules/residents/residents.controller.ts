@@ -17,9 +17,9 @@ export class ResidentsController {
     @PublicRoute()
     @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 req/min/IP — public unauthenticated write
     @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Submit a resident lead (public, idempotent)' })
+    @ApiOperation({ summary: 'Submit a resident lead (public)' })
     create(
-        @Body() dto: ResidentLeadCreateDto,
+        @Body() dto: ResidentLeadCreateDto
     ): Promise<ResidentLeadResponseDto> {
         return this.residentsService.create(dto);
     }

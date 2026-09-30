@@ -72,7 +72,7 @@ Mobile App (Expo React Native)
 
 ```bash
 git clone <repo-url>
-cd eastpark-backend
+cd apps/backend
 pnpm install
 ```
 
@@ -571,7 +571,7 @@ fly ssh console -C "env | grep -E 'NODE_ENV|HTTP_PORT|DATABASE'"
 ## Project Structure
 
 ```
-eastpark-backend/
+apps/backend/
 ├── prisma/
 │   ├── schema.prisma          ← Full data model (20+ models)
 │   └── seed.ts                ← Seeds first admin user

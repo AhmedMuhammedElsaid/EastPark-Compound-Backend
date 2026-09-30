@@ -1,6 +1,6 @@
 # EastPark Backend — Session Context
 
-> Claude Code loads this file automatically when invoked in `eastpark-backend/`.
+> Claude Code loads this file automatically when invoked in `apps/backend/`.
 > Root project context: see `/mnt/c/Unite/EastPark-App/CLAUDE.md`.
 
 ---

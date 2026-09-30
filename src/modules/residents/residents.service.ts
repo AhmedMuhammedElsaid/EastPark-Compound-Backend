@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ConflictException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { ResidentLeadStatus, Role } from '@prisma/client';
 
 import { DatabaseService } from 'src/common/database/services/database.service';
@@ -16,21 +20,14 @@ import {
 export class ResidentsService {
     constructor(
         private readonly db: DatabaseService,
-        private readonly invitationsService: InvitationsService,
+        private readonly invitationsService: InvitationsService
     ) {}
 
-    /**
-     * Public, unauthenticated lead capture. Must NEVER 409/500 on a duplicate
-     * submission — re-submitting the same building/floor/flat/email is
-     * idempotent and simply refreshes the existing PENDING/INVITED/CONVERTED
-     * lead's contact details.
-     */
     async create(dto: ResidentLeadCreateDto): Promise<ResidentLeadResponseDto> {
         const email = dto.email.toLowerCase().trim();
 
         const existing = await this.db.residentLead.findFirst({
             where: {
-                email,
                 building: dto.building,
                 floor: dto.floor,
                 flatNumber: dto.flatNumber,
@@ -39,37 +36,37 @@ export class ResidentsService {
         });
 
         if (existing) {
-            return this.db.residentLead.update({
-                where: { id: existing.id },
-                data: {
-                    name: dto.name.trim(),
-                    phone: dto.phone,
-                    // Only overwrite parking when the resubmission actually
-                    // supplies one — the web form omits the key when blank,
-                    // and an omission must not wipe a previously given value.
-                    ...(dto.parking === undefined
-                        ? {}
-                        : { parking: dto.parking }),
-                },
-            });
+            throw new ConflictException('residentLead.error.unitReserved');
         }
 
-        return this.db.residentLead.create({
-            data: {
-                name: dto.name.trim(),
-                email,
-                phone: dto.phone,
-                building: dto.building,
-                floor: dto.floor,
-                flatNumber: dto.flatNumber,
-                parking: dto.parking,
-                status: ResidentLeadStatus.PENDING,
-            },
-        });
+        try {
+            return await this.db.residentLead.create({
+                data: {
+                    name: dto.name.trim(),
+                    email,
+                    phone: dto.phone,
+                    building: dto.building,
+                    floor: dto.floor,
+                    flatNumber: dto.flatNumber,
+                    parking: dto.parking,
+                    status: ResidentLeadStatus.PENDING,
+                },
+            });
+        } catch (error) {
+            if (
+                typeof error === 'object' &&
+                error !== null &&
+                'code' in error &&
+                error.code === 'P2002'
+            ) {
+                throw new ConflictException('residentLead.error.unitReserved');
+            }
+            throw error;
+        }
     }
 
     async findAll(
-        query: ResidentLeadQueryDto,
+        query: ResidentLeadQueryDto
     ): Promise<ResidentLeadListResponseDto> {
         const limit = query.limit ?? 20;
 
@@ -96,10 +93,7 @@ export class ResidentsService {
      * email, we just link + mark CONVERTED — we never create a second
      * invitation or touch the existing account.
      */
-    async invite(
-        id: string,
-        actor: IAuthUser,
-    ): Promise<{ message: string }> {
+    async invite(id: string, actor: IAuthUser): Promise<{ message: string }> {
         const lead = await this.db.residentLead.findUnique({ where: { id } });
         if (!lead) throw new NotFoundException('residentLead.error.notFound');
 
@@ -120,7 +114,7 @@ export class ResidentsService {
 
         await this.invitationsService.create(
             { email: lead.email, role: Role.RESIDENT },
-            actor,
+            actor
         );
 
         await this.db.residentLead.update({

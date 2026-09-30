@@ -41,7 +41,7 @@ Item format: `[P0|P1|P2] — title — file:line — what to change — how to v
 >    destructive one is the intended `DROP INDEX users_phone_key`), but it has not been applied
 >    to a real database.
 >
-> Priority has shifted: **`eastpark-web-app` ships first.** See `../restructure.md` for the
+> Priority has shifted: **`eastpark-web-app` ships first.** See `../../restructure.md` for the
 > deferred monorepo work.
 
 ---
@@ -249,7 +249,7 @@ Confirmed: none of the four build profiles (production/preview/development/simul
 
 `eas env:list --environment production` **could not be run here** — `npx eas-cli env:list` (eas-cli 19.0.5, Node 24) failed with a TLS error before reaching auth: `write EPROTO … packet length too long`. That is this WSL sandbox's network, not a login or CLI problem. `whoami` also timed out. **You must run this yourself to confirm whether the values are already set on the EAS dashboard.**
 
-- **[P0] — Cloud builds ship pointing at localhost — `eastpark-frontend/env.ts:12-13` — set the vars in EAS (commands below) or every store build is dead on launch — verify: `eas env:list --environment production` lists both, then check the built app hits the real API**
+- **[P0] — Cloud builds ship pointing at localhost — `apps/mobile/env.ts:12-13` — set the vars in EAS (commands below) or every store build is dead on launch — verify: `eas env:list --environment production` lists both, then check the built app hits the real API**
 
 ```bash
 eas env:create --environment production --name EXPO_PUBLIC_API_URL    --value https://eastpark-backend.fly.dev --visibility plaintext
@@ -264,7 +264,7 @@ Note: no `/v1` suffix — `services/api/client.ts:30` appends it.
 
 Confirmed: `"submit": { "preview": {}, "production": {} }` — both empty, so store submission is impossible as configured.
 
-- **[P1] — Fill the submit block — `eastpark-frontend/eas.json` — JSON below — verify: `eas submit -p ios --profile production --dry-run` resolves credentials without prompting**
+- **[P1] — Fill the submit block — `apps/mobile/eas.json` — JSON below — verify: `eas submit -p ios --profile production --dry-run` resolves credentials without prompting**
 
 ```json
 "submit": {
@@ -314,11 +314,11 @@ Ran under Node v24.15.0 / pnpm 10.33.0, each command separately. **This is the f
 
 Script names confirmed: `type-check` (hyphenated), `lint`, `test`. There is no `typecheck` script.
 
-- **[P0] — Type-checking has never actually run — `eastpark-frontend/tsconfig.json:4` — `"ignoreDeprecations": "6.0"` is invalid for the installed TypeScript 5.9.3, which accepts only `"5.0"`. `tsc` aborts at config parsing with `TS5103` before evaluating a single file, so **zero files are type-checked** and every "TS clean" claim in the project docs is unfounded. Change to `"5.0"` or remove the key — verify: `pnpm run type-check` gets far enough to report real errors (expect a backlog on first successful run)**
+- **[P0] — Type-checking has never actually run — `apps/mobile/tsconfig.json:4` — `"ignoreDeprecations": "6.0"` is invalid for the installed TypeScript 5.9.3, which accepts only `"5.0"`. `tsc` aborts at config parsing with `TS5103` before evaluating a single file, so **zero files are type-checked** and every "TS clean" claim in the project docs is unfounded. Change to `"5.0"` or remove the key — verify: `pnpm run type-check` gets far enough to report real errors (expect a backlog on first successful run)**
 
 I reproduced this directly: `tsc --noemit` under Node 24 → `tsconfig.json(4,27): error TS5103: Invalid value for '--ignoreDeprecations'.`, exit 2.
 
-- **[P1] — Lint fails with 3915 errors — `eastpark-frontend/` — 3810 of them (97%) are a single root cause: `eslint.config.mjs` sets `quotes: "double"` while essentially every source file uses single quotes. `eslint . --fix` resolves 3839 mechanically — verify: `pnpm lint` error count drops to ~76**
+- **[P1] — Lint fails with 3915 errors — `apps/mobile/` — 3810 of them (97%) are a single root cause: `eslint.config.mjs` sets `quotes: "double"` while essentially every source file uses single quotes. `eslint . --fix` resolves 3839 mechanically — verify: `pnpm lint` error count drops to ~76**
 - **[P1] — ESLint is linting Markdown as TypeScript — `README.md`, `claude.md`, `Documentation/*.md` — the antfu config parses embedded code fences as standalone TS, producing 13 parsing errors plus ~20 spurious `react-hooks/*` and `react-compiler` errors against prose fragments. All 7 `rules-of-hooks` hits are artifacts, not real violations. Add the docs to the ESLint ignore list — verify: no errors reported against `.md` files**
 - **[P2] — Real lint findings behind the noise — after `--fix` and ignoring docs, the genuine set is small: 2 i18n interpolation errors (`merchant.pending_count_waiting` in both `ar.json` and `en.json`), 25 `unicorn/filename-case` violations (`formatCurrency.ts`, `authSlice.ts`, `cartSlice.ts`, `preferencesSlice.ts`), 10 `max-lines-per-function`, 5 `max-statements-per-line`, 16 `no-array-index-key` warnings, 1 unused var (`(merchant)/menu/index.tsx:99`), 1 unknown Tailwind class (`bg-primary-300` in `checkbox.tsx:166`), and a missing-deps warning on animation code — verify: `pnpm lint` clean**
 
@@ -330,14 +330,14 @@ I reproduced this directly: `tsc --noemit` under Node 24 → `tsconfig.json(4,27
 
 Confirmed: the preview profile mixes `"distribution": "store"` with `android.buildType: "apk"`. Play has not accepted new APK uploads since August 2021 (AAB only), and `store` vs `internal` changes which credentials EAS provisions — so a `store`-distribution APK cannot actually be delivered anywhere.
 
-- **[P2] — Fix the preview profile — `eastpark-frontend/eas.json` (preview block) — set `"distribution": "internal"` and keep `buildType: "apk"` (correct for shareable internal test builds) — verify: `eas build -p android --profile preview` produces an installable APK with an internal share link**
+- **[P2] — Fix the preview profile — `apps/mobile/eas.json` (preview block) — set `"distribution": "internal"` and keep `buildType: "apk"` (correct for shareable internal test builds) — verify: `eas build -p android --profile preview` produces an installable APK with an internal share link**
 
 ### 3e. Repo hygiene
 
 All three modified files are **whitespace-only** — `git diff --ignore-all-space` is empty for each; the working copies have CRLF against LF in HEAD.
 
 - **[P2] — Resolve CRLF churn — `.env.example`, `eslint.config.mjs`, `src/lib/hooks/use-biometric.ts` — `git checkout --` all three, then add a `.gitattributes` with `* text=auto eol=lf` to stop recurrence — verify: `git status --short` clean**
-- **[P2] — Remove the stray npm lockfile — `eastpark-frontend/package-lock.json` — **it is tracked in git** (not untracked, as prior notes assumed) in a pnpm-only repo; `git rm --cached package-lock.json`, delete it, and add it to `.gitignore` — verify: `git ls-files package-lock.json` returns nothing**
+- **[P2] — Remove the stray npm lockfile — `apps/mobile/package-lock.json` — **it is tracked in git** (not untracked, as prior notes assumed) in a pnpm-only repo; `git rm --cached package-lock.json`, delete it, and add it to `.gitignore` — verify: `git ls-files package-lock.json` returns nothing**
 
 ---
 

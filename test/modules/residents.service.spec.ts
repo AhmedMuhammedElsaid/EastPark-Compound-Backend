@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -98,14 +98,13 @@ describe('ResidentsService', () => {
             db.residentLead.create.mockResolvedValue(mockLead());
 
             await service.create(
-                validCreateDto({ email: '  ME@Example.COM ' }) as ResidentLeadCreateDto,
+                validCreateDto({
+                    email: '  ME@Example.COM ',
+                }) as ResidentLeadCreateDto
             );
 
             const createCall = db.residentLead.create.mock.calls[0]?.[0];
             expect(createCall?.data?.email).toBe('me@example.com');
-
-            const findFirstCall = db.residentLead.findFirst.mock.calls[0]?.[0];
-            expect(findFirstCall?.where?.email).toBe('me@example.com');
         });
 
         it('trims name', async () => {
@@ -113,26 +112,33 @@ describe('ResidentsService', () => {
             db.residentLead.create.mockResolvedValue(mockLead());
 
             await service.create(
-                validCreateDto({ name: '  Jane Doe  ' }) as ResidentLeadCreateDto,
+                validCreateDto({
+                    name: '  Jane Doe  ',
+                }) as ResidentLeadCreateDto
             );
 
             const createCall = db.residentLead.create.mock.calls[0]?.[0];
             expect(createCall?.data?.name).toBe('Jane Doe');
         });
 
-        it('DEDUPE: updates existing non-REJECTED lead instead of creating a duplicate', async () => {
+        it('rejects a submission when the unit already has a non-REJECTED lead', async () => {
             const existing = mockLead({ id: 'lead-existing' });
             db.residentLead.findFirst.mockResolvedValue(existing);
-            db.residentLead.update.mockResolvedValue(existing);
 
             await expect(
-                service.create(validCreateDto() as ResidentLeadCreateDto),
-            ).resolves.not.toThrow();
+                service.create(validCreateDto() as ResidentLeadCreateDto)
+            ).rejects.toBeInstanceOf(ConflictException);
 
             expect(db.residentLead.create).not.toHaveBeenCalled();
-            expect(db.residentLead.update).toHaveBeenCalledTimes(1);
-            const updateCall = db.residentLead.update.mock.calls[0]?.[0];
-            expect(updateCall?.where?.id).toBe('lead-existing');
+            expect(db.residentLead.update).not.toHaveBeenCalled();
+            expect(db.residentLead.findFirst).toHaveBeenCalledWith({
+                where: {
+                    building: 'Building A',
+                    floor: '3',
+                    flatNumber: '2',
+                    status: { not: ResidentLeadStatus.REJECTED },
+                },
+            });
         });
 
         it('excludes REJECTED leads from the dedupe match (status: { not: REJECTED } in where)', async () => {
@@ -149,39 +155,13 @@ describe('ResidentsService', () => {
             expect(db.residentLead.create).toHaveBeenCalledTimes(1);
         });
 
-        it('PARKING PRESERVATION: omitting parking on resubmission does not include a parking key in update data', async () => {
-            const existing = mockLead({ id: 'lead-existing', parking: 'A-1' });
-            db.residentLead.findFirst.mockResolvedValue(existing);
-            db.residentLead.update.mockResolvedValue(existing);
+        it('maps a concurrent unit reservation to the same conflict', async () => {
+            db.residentLead.findFirst.mockResolvedValue(null);
+            db.residentLead.create.mockRejectedValue({ code: 'P2002' });
 
-            const dtoWithoutParking = validCreateDto();
-            delete (dtoWithoutParking as Record<string, unknown>).parking;
-
-            await service.create(dtoWithoutParking as ResidentLeadCreateDto);
-
-            const updateCall = db.residentLead.update.mock.calls[0]?.[0];
-            expect(updateCall?.data).toEqual({
-                name: 'Jane Doe',
-                phone: '01000400163',
-            });
-            expect(updateCall?.data).not.toHaveProperty('parking');
-        });
-
-        it('writes parking when supplied on a resubmission', async () => {
-            const existing = mockLead({ id: 'lead-existing', parking: 'A-1' });
-            db.residentLead.findFirst.mockResolvedValue(existing);
-            db.residentLead.update.mockResolvedValue(existing);
-
-            await service.create(
-                validCreateDto({ parking: 'C-3' }) as ResidentLeadCreateDto,
-            );
-
-            const updateCall = db.residentLead.update.mock.calls[0]?.[0];
-            expect(updateCall?.data).toEqual({
-                name: 'Jane Doe',
-                phone: '01000400163',
-                parking: 'C-3',
-            });
+            await expect(
+                service.create(validCreateDto() as ResidentLeadCreateDto)
+            ).rejects.toBeInstanceOf(ConflictException);
         });
     });
 
@@ -192,7 +172,7 @@ describe('ResidentsService', () => {
             db.residentLead.findUnique.mockResolvedValue(null);
 
             await expect(
-                service.invite('bad-id', adminActor),
+                service.invite('bad-id', adminActor)
             ).rejects.toBeInstanceOf(NotFoundException);
         });
 
@@ -204,7 +184,10 @@ describe('ResidentsService', () => {
                 email: lead.email,
             });
             db.residentLead.update.mockResolvedValue(
-                mockLead({ userId: 'user-1', status: ResidentLeadStatus.CONVERTED }),
+                mockLead({
+                    userId: 'user-1',
+                    status: ResidentLeadStatus.CONVERTED,
+                })
             );
 
             await service.invite('lead-1', adminActor);
@@ -225,14 +208,14 @@ describe('ResidentsService', () => {
             db.user.findUnique.mockResolvedValue(null);
             invitationsService.create.mockResolvedValue({});
             db.residentLead.update.mockResolvedValue(
-                mockLead({ status: ResidentLeadStatus.INVITED }),
+                mockLead({ status: ResidentLeadStatus.INVITED })
             );
 
             await service.invite('lead-1', adminActor);
 
             expect(invitationsService.create).toHaveBeenCalledWith(
                 { email: lead.email, role: Role.RESIDENT },
-                adminActor,
+                adminActor
             );
             expect(db.residentLead.update).toHaveBeenCalledWith({
                 where: { id: 'lead-1' },
@@ -246,7 +229,7 @@ describe('ResidentsService', () => {
     describe('findAll', () => {
         it('cursor pagination: fetches limit+1, pops extra, nextCursor = popped row id', async () => {
             const leads = Array.from({ length: 6 }, (_, i) =>
-                mockLead({ id: `lead-${i}` }),
+                mockLead({ id: `lead-${i}` })
             );
             db.residentLead.findMany.mockResolvedValue(leads);
 
@@ -260,7 +243,10 @@ describe('ResidentsService', () => {
         });
 
         it('returns undefined nextCursor when fewer than limit+1 rows come back', async () => {
-            const leads = [mockLead({ id: 'lead-0' }), mockLead({ id: 'lead-1' })];
+            const leads = [
+                mockLead({ id: 'lead-0' }),
+                mockLead({ id: 'lead-1' }),
+            ];
             db.residentLead.findMany.mockResolvedValue(leads);
 
             const result = await service.findAll({ limit: 20 } as any);
@@ -315,38 +301,38 @@ describe('ResidentLeadCreateDto validation', () => {
     };
 
     describe('floor', () => {
-        it.each(['G', '1', '11'])('accepts "%s"', async (floor) => {
+        it.each(['G', '1', '11'])('accepts "%s"', async floor => {
             const errors = await validateDto({ floor });
-            expect(errors.filter((e) => e.property === 'floor')).toHaveLength(0);
+            expect(errors.filter(e => e.property === 'floor')).toHaveLength(0);
         });
 
-        it.each(['0', '12', 'G2', ''])('rejects "%s"', async (floor) => {
+        it.each(['0', '12', 'G2', ''])('rejects "%s"', async floor => {
             const errors = await validateDto({ floor });
             expect(
-                errors.filter((e) => e.property === 'floor').length,
+                errors.filter(e => e.property === 'floor').length
             ).toBeGreaterThan(0);
         });
 
         it('rejects a number (3)', async () => {
             const errors = await validateDto({ floor: 3 });
             expect(
-                errors.filter((e) => e.property === 'floor').length,
+                errors.filter(e => e.property === 'floor').length
             ).toBeGreaterThan(0);
         });
     });
 
     describe('flatNumber', () => {
-        it.each(['1', '2', '3', '4', '5'])('accepts "%s"', async (flatNumber) => {
+        it.each(['1', '2', '3', '4', '5'])('accepts "%s"', async flatNumber => {
             const errors = await validateDto({ flatNumber });
             expect(
-                errors.filter((e) => e.property === 'flatNumber'),
+                errors.filter(e => e.property === 'flatNumber')
             ).toHaveLength(0);
         });
 
-        it.each(['0', '6', ''])('rejects "%s"', async (flatNumber) => {
+        it.each(['0', '6', ''])('rejects "%s"', async flatNumber => {
             const errors = await validateDto({ flatNumber });
             expect(
-                errors.filter((e) => e.property === 'flatNumber').length,
+                errors.filter(e => e.property === 'flatNumber').length
             ).toBeGreaterThan(0);
         });
     });
@@ -357,15 +343,15 @@ describe('ResidentLeadCreateDto validation', () => {
             '+201000400163',
             '0100 040 0163',
             '0100-040-0163',
-        ])('accepts "%s"', async (phone) => {
+        ])('accepts "%s"', async phone => {
             const errors = await validateDto({ phone });
-            expect(errors.filter((e) => e.property === 'phone')).toHaveLength(0);
+            expect(errors.filter(e => e.property === 'phone')).toHaveLength(0);
         });
 
-        it.each(['12345', '', '+447911123456'])('rejects "%s"', async (phone) => {
+        it.each(['12345', '', '+447911123456'])('rejects "%s"', async phone => {
             const errors = await validateDto({ phone });
             expect(
-                errors.filter((e) => e.property === 'phone').length,
+                errors.filter(e => e.property === 'phone').length
             ).toBeGreaterThan(0);
         });
     });
@@ -374,7 +360,7 @@ describe('ResidentLeadCreateDto validation', () => {
         it('rejects malformed input', async () => {
             const errors = await validateDto({ email: 'not-an-email' });
             expect(
-                errors.filter((e) => e.property === 'email').length,
+                errors.filter(e => e.property === 'email').length
             ).toBeGreaterThan(0);
         });
     });

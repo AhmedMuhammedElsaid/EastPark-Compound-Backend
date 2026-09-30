@@ -120,7 +120,7 @@ Most Node/Docker/Prisma docs assume a Linux environment. Fewer edge cases with f
 
 ## Frontend env config
 
-`eastpark-frontend/.env.local` — this file controls the API URL baked into the JS bundle:
+`apps/mobile/.env.local` — this file controls the API URL baked into the JS bundle:
 
 ```
 EXPO_PUBLIC_API_URL=http://192.168.1.191:3000
@@ -139,5 +139,5 @@ If your Windows LAN IP changes (e.g. you moved networks), update this file and r
 | Re-apply portproxy after WSL restart | `netsh interface portproxy add v4tov4 listenport=3000 listenaddress=0.0.0.0 connectport=3000 connectaddress=<wsl-ip>` (PowerShell as Admin) |
 | Check existing portproxy rules | `netsh interface portproxy show all` (PowerShell) |
 | Delete a portproxy rule | `netsh interface portproxy delete v4tov4 listenport=3000 listenaddress=0.0.0.0` (PowerShell as Admin) |
-| Start backend | `pnpm dev` (in WSL, inside `eastpark-backend/`) |
-| Start frontend | `pnpm start` (in `eastpark-frontend/`) |
+| Start backend | `pnpm dev` (in WSL, inside `apps/backend/`) |
+| Start frontend | `pnpm start` (in `apps/mobile/`) |

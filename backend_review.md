@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-07-19
 **Auditor:** Opus exploration agent (read-only verification against `CLAUDE.md` claims)
-**Scope:** `eastpark-backend/` (NestJS + Fastify)
+**Scope:** `apps/backend/` (NestJS + Fastify)
 
 **Verification pass: 2026-07-26** — every claim below was re-checked directly against current source (not inferred). Additionally, unlike the 2026-07-19 pass, a modern Node toolchain (`nvm` → Node v24.15.0, present on this machine alongside the WSL-default Node v12) was used to actually **run** `pnpm typecheck` and `pnpm test` (after manually restoring a missing `@swc/core` native binding — a local, non-repo, non-lockfile workaround) to get real, non-inferred signal instead of static reading. Results matched the 2026-07-19 written claims almost exactly, with one correction (BE-3 spans 3 files, not 2) and one addition (BE-3 is not just a `tsc`-only issue — see below). No source files were modified; only this review file was edited.
 
@@ -70,10 +70,10 @@ src/modules/invitations/dtos/request/invitation.create.dto.ts(13,27): error TS27
 3. **Fix the remaining TS errors** — `UserResponseDto` should not require `passwordHash`/`pushToken` on the redacted-response shape (3 sites in `auth.service.ts`), and the `invitations` DTO's `Role.MERCHANT | Role.ADMIN` namespace usage needs `(typeof Role)[keyof typeof Role]` or `$Enums.Role` (2 sites). Add `pnpm typecheck` to CI.
 4. **Fix `payments.service.spec.ts`** (provide `CacheService` mock); re-run `pnpm test` to confirm real coverage (currently failing / ~74%, verified live on 2026-07-26).
 5. **Fix `.github/workflows/test.yml`** to use pnpm (or replace it) so CI actually runs.
-6. **`fly secrets set PAYMOB_INTEGRATION_ID=<val> PAYMOB_IFRAME_ID=<val>`** from `eastpark-backend/`.
-7. **`fly deploy`** from `eastpark-backend/` — **only after** BE-2 (migration baseline) is resolved, since deploy runs `prisma migrate deploy` against a fresh prod DB.
+6. **`fly secrets set PAYMOB_INTEGRATION_ID=<val> PAYMOB_IFRAME_ID=<val>`** from `apps/backend/`.
+7. **`fly deploy`** from `apps/backend/` — **only after** BE-2 (migration baseline) is resolved, since deploy runs `prisma migrate deploy` against a fresh prod DB.
 
 ---
 
-*Companion file: `../eastpark-frontend/frontend_review.md`. See root `CLAUDE.md` for synced current status.*
+*Companion file: `../mobile/frontend_review.md`. See root `CLAUDE.md` for synced current status.*
 *Verification-pass tooling note: WSL's default Node is v12 (cannot run this project's toolchain). This pass used `nvm` (already installed on the machine) to switch to Node v24.15.0 and ran `pnpm typecheck` / `pnpm test` for real, after manually placing a missing `@swc/core-linux-x64-gnu` native binding fetched via a scratch `npm install` in `/tmp` (not added to the repo, `package.json`, or `pnpm-lock.yaml` — purely a local `node_modules` file-copy workaround so the existing SWC-based Jest/tsc config could run). This means BE-3/BE-4/BE-5/BE-6 are now backed by actual command output, not inference — see the tables above for exact figures.*

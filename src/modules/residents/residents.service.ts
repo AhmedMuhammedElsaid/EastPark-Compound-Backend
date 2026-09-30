@@ -16,6 +16,20 @@ import {
     ResidentLeadResponseDto,
 } from './dtos/response/resident-lead.response.dto';
 
+function isSameSubmission(
+    existing: ResidentLeadResponseDto,
+    dto: ResidentLeadCreateDto,
+    name: string,
+    email: string
+): boolean {
+    return (
+        existing.name === name &&
+        existing.email === email &&
+        existing.phone === dto.phone &&
+        (existing.parking ?? undefined) === dto.parking
+    );
+}
+
 @Injectable()
 export class ResidentsService {
     constructor(
@@ -25,6 +39,7 @@ export class ResidentsService {
 
     async create(dto: ResidentLeadCreateDto): Promise<ResidentLeadResponseDto> {
         const email = dto.email.toLowerCase().trim();
+        const name = dto.name.trim();
 
         const existing = await this.db.residentLead.findFirst({
             where: {
@@ -36,13 +51,14 @@ export class ResidentsService {
         });
 
         if (existing) {
+            if (isSameSubmission(existing, dto, name, email)) return existing;
             throw new ConflictException('residentLead.error.unitReserved');
         }
 
         try {
             return await this.db.residentLead.create({
                 data: {
-                    name: dto.name.trim(),
+                    name,
                     email,
                     phone: dto.phone,
                     building: dto.building,
@@ -59,6 +75,21 @@ export class ResidentsService {
                 'code' in error &&
                 error.code === 'P2002'
             ) {
+                const concurrent = await this.db.residentLead.findFirst({
+                    where: {
+                        building: dto.building,
+                        floor: dto.floor,
+                        flatNumber: dto.flatNumber,
+                        status: { not: ResidentLeadStatus.REJECTED },
+                    },
+                });
+
+                if (
+                    concurrent &&
+                    isSameSubmission(concurrent, dto, name, email)
+                ) {
+                    return concurrent;
+                }
                 throw new ConflictException('residentLead.error.unitReserved');
             }
             throw error;

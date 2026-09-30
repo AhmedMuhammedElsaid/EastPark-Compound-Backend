@@ -122,7 +122,10 @@ describe('ResidentsService', () => {
         });
 
         it('rejects a submission when the unit already has a non-REJECTED lead', async () => {
-            const existing = mockLead({ id: 'lead-existing' });
+            const existing = mockLead({
+                id: 'lead-existing',
+                email: 'different@example.com',
+            });
             db.residentLead.findFirst.mockResolvedValue(existing);
 
             await expect(
@@ -139,6 +142,17 @@ describe('ResidentsService', () => {
                     status: { not: ResidentLeadStatus.REJECTED },
                 },
             });
+        });
+
+        it('returns an existing lead for an exact retry of the same submission', async () => {
+            const existing = mockLead({ id: 'lead-existing' });
+            db.residentLead.findFirst.mockResolvedValue(existing);
+
+            await expect(
+                service.create(validCreateDto() as ResidentLeadCreateDto)
+            ).resolves.toBe(existing);
+
+            expect(db.residentLead.create).not.toHaveBeenCalled();
         });
 
         it('excludes REJECTED leads from the dedupe match (status: { not: REJECTED } in where)', async () => {
@@ -162,6 +176,18 @@ describe('ResidentsService', () => {
             await expect(
                 service.create(validCreateDto() as ResidentLeadCreateDto)
             ).rejects.toBeInstanceOf(ConflictException);
+        });
+
+        it('returns the winning lead when an identical concurrent retry hits the unique index', async () => {
+            const existing = mockLead({ id: 'lead-existing' });
+            db.residentLead.findFirst
+                .mockResolvedValueOnce(null)
+                .mockResolvedValueOnce(existing);
+            db.residentLead.create.mockRejectedValue({ code: 'P2002' });
+
+            await expect(
+                service.create(validCreateDto() as ResidentLeadCreateDto)
+            ).resolves.toBe(existing);
         });
     });
 

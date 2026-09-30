@@ -8,6 +8,12 @@
 
 ## Production Snapshot — 2026-09-30
 
+Render migration is prepared in `render.yaml` and `Documentation/RENDER.md`. The intended initial
+topology is Vercel web + Render free Docker API + Supabase + Upstash. Fly remains the active API
+until the Render service passes the documented cutover checks. Persistent realtime ordering and
+the in-process election cron are not guaranteed while a free Render service sleeps; web ordering
+must poll REST endpoints initially.
+
 - API: `https://eastpark-backend.fly.dev` on Fly.io `cdg`
 - Health: HTTP 200; Prisma `up`
 - `POST /v1/residents/leads`: HTTP 200; Supabase insert verified
@@ -48,6 +54,7 @@ Current duplicate-unit checkpoint: `a4ff04f`. Branch: `main`.
 Includes: Auth, shops, products, orders, payments (Paymob), community (announcements, polls, elections, feedback), notifications, invitations, Paymob 3-step initiation + HMAC-SHA512 webhook, Socket.io `/orders` namespace, Expo Push inline, 88% test coverage, Docker Compose, Swagger.
 
 **Post-audit patches applied (2026-04-03):**
+
 - `AnnouncementCreateDto` / `ReportCreateDto` — added optional `publishedAt` (server defaults to now); fixes DB constraint error on create
 - `PollsService.vote` / `ElectionsService.vote` — rejects votes on expired polls/elections (400 `*.error.expired`)
 - `UserService.deleteUser` — refactored to interactive transaction; now correctly cascades merchant shop data (orders, reviews, savedShops, products, photos) before deleting the user
@@ -59,6 +66,7 @@ Includes: Auth, shops, products, orders, payments (Paymob), community (announcem
 - Docs: GUIDE.md OTP TTL 5min → 10min; HOWTORUN.md admin credentials corrected; WebSocket event name corrected (`orderStatusUpdated` → `order:status_update`)
 
 **Seed consolidation (2026-04-08):**
+
 - `sample.json` and `seed.ts` deleted — single seed file is now `prisma/seed-data.ts`
 - `pnpm seed` → `seed-data.ts` (idempotent; skips if merchants already exist)
 - Rich dataset: 5 merchants · 8 residents · 5 shops · 42 products · 14 orders · 8 announcements · 3 polls · 1 election · 8 feedback items
@@ -66,6 +74,7 @@ Includes: Auth, shops, products, orders, payments (Paymob), community (announcem
 - New doc: `Documentation/WSL_NETWORKING.md` — explains WSL2 NAT, portproxy setup, and full phone→backend request flow
 
 **Security & logic audit 2 (2026-04-08) — commit `c7dfb01`:**
+
 - `AuthService.verifyOtp/login/acceptInvitation` — `passwordHash` + `pushToken` were returned raw in every auth response; now destructured out before returning `{ ...tokens, user }`
 - `ShopsService.addPhoto/removePhoto` — no ownership check; any MERCHANT could modify any shop's photos; ownership enforced (`shop.merchantId === actor.userId`) for MERCHANT role
 - `FeedbackService.findOne` — MERCHANT role could read any user's feedback; guard changed from `role === RESIDENT` to `role !== ADMIN`
@@ -81,63 +90,63 @@ Includes: Auth, shops, products, orders, payments (Paymob), community (announcem
 
 ## User Roles
 
-| Role | Access Level |
-|---|---|
-| Guest | No auth. Public endpoints: shop listing, announcements read, governance read. |
-| Resident | Authenticated. Orders, reviews, polls/elections voting, feedback, profile. |
-| Merchant | Authenticated. Dashboard, own menu CRUD, own orders management. |
-| Admin | Authenticated. All admin endpoints: invitations, announcements, polls, elections, reports, user management. |
+| Role     | Access Level                                                                                                |
+| -------- | ----------------------------------------------------------------------------------------------------------- |
+| Guest    | No auth. Public endpoints: shop listing, announcements read, governance read.                               |
+| Resident | Authenticated. Orders, reviews, polls/elections voting, feedback, profile.                                  |
+| Merchant | Authenticated. Dashboard, own menu CRUD, own orders management.                                             |
+| Admin    | Authenticated. All admin endpoints: invitations, announcements, polls, elections, reports, user management. |
 
 ## Hard Rules
 
-| Rule | Detail |
-|---|---|
-| 100% free stack | Every service must be open-source, self-hostable, or on permanent free tier |
-| Fastify only | NestJS with Fastify adapter — NOT Express |
-| Cursor pagination everywhere | All list endpoints use `cursor` + `limit` — no page/offset |
-| Server computes totals | `totalAmount` computed on server — never trust client payload |
-| Soft delete products | `isDeleted Boolean` — preserves OrderItem foreign keys |
-| One vote enforcement | DB `@@id([userId, pollId])` / `@@id([userId, electionId])` — no double votes |
-| Auth module owns push token | `PATCH /auth/push-token` — not `/users/me/push-token` |
-| ConfigService for env | Never `process.env` directly in services |
-| No `@types/ioredis` | ioredis v5+ bundles types — adding @types/ioredis causes conflicts |
-| Rate limit auth routes | `@nestjs/throttler` max 5 req/min on `/auth/*` |
+| Rule                         | Detail                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| 100% free stack              | Every service must be open-source, self-hostable, or on permanent free tier  |
+| Fastify only                 | NestJS with Fastify adapter — NOT Express                                    |
+| Cursor pagination everywhere | All list endpoints use `cursor` + `limit` — no page/offset                   |
+| Server computes totals       | `totalAmount` computed on server — never trust client payload                |
+| Soft delete products         | `isDeleted Boolean` — preserves OrderItem foreign keys                       |
+| One vote enforcement         | DB `@@id([userId, pollId])` / `@@id([userId, electionId])` — no double votes |
+| Auth module owns push token  | `PATCH /auth/push-token` — not `/users/me/push-token`                        |
+| ConfigService for env        | Never `process.env` directly in services                                     |
+| No `@types/ioredis`          | ioredis v5+ bundles types — adding @types/ioredis causes conflicts           |
+| Rate limit auth routes       | `@nestjs/throttler` max 5 req/min on `/auth/*`                               |
 
 ---
 
 ## Technology Stack
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Framework | NestJS 11 | Fastify adapter — NOT Express |
-| Runtime | Node.js ≥ 20 | pnpm@9.15.0 pinned |
-| ORM | Prisma 6.19.0 | PostgreSQL 16 |
-| Cache | ioredis → Redis 7 | OTP, token blacklist, rate limiting |
-| Auth | Passport + JWT | argon2 hashing |
-| JWT | Two secrets | Access 15min (`JWT_SECRET`) / Refresh 7d (`JWT_REFRESH_SECRET`) |
-| WebSockets | Socket.io | `/orders` namespace |
-| Email | Nodemailer | Mailpit (dev) / Brevo SMTP (prod, 300/day free) |
-| File storage | Supabase JS SDK | MinIO Docker (dev) / Supabase Storage (prod, 1GB free) |
-| Push | expo-server-sdk | Expo Push Service inline — no queues, no BullMQ |
-| Payments | Paymob | HMAC-SHA512 webhook; COD primary, card/wallet via Paymob |
-| Logging | nestjs-pino / pino-pretty | structured JSON in prod |
-| Scheduling | @nestjs/schedule | @Cron every 5min — election auto-open |
-| API docs | Swagger | `http://localhost:3000/docs` |
-| Rate limiting | @nestjs/throttler | Max 5 req/min on all `/auth/*` endpoints |
-| Hosting | Fly.io `cdg` (Paris) | `auto_stop_machines = false`, min 1 machine always on |
-| Env config | ConfigService | Never raw `process.env` in services |
+| Layer         | Choice                    | Notes                                                           |
+| ------------- | ------------------------- | --------------------------------------------------------------- |
+| Framework     | NestJS 11                 | Fastify adapter — NOT Express                                   |
+| Runtime       | Node.js ≥ 20              | pnpm@9.15.0 pinned                                              |
+| ORM           | Prisma 6.19.0             | PostgreSQL 16                                                   |
+| Cache         | ioredis → Redis 7         | OTP, token blacklist, rate limiting                             |
+| Auth          | Passport + JWT            | argon2 hashing                                                  |
+| JWT           | Two secrets               | Access 15min (`JWT_SECRET`) / Refresh 7d (`JWT_REFRESH_SECRET`) |
+| WebSockets    | Socket.io                 | `/orders` namespace                                             |
+| Email         | Nodemailer                | Mailpit (dev) / Brevo SMTP (prod, 300/day free)                 |
+| File storage  | Supabase JS SDK           | MinIO Docker (dev) / Supabase Storage (prod, 1GB free)          |
+| Push          | expo-server-sdk           | Expo Push Service inline — no queues, no BullMQ                 |
+| Payments      | Paymob                    | HMAC-SHA512 webhook; COD primary, card/wallet via Paymob        |
+| Logging       | nestjs-pino / pino-pretty | structured JSON in prod                                         |
+| Scheduling    | @nestjs/schedule          | @Cron every 5min — election auto-open                           |
+| API docs      | Swagger                   | `http://localhost:3000/docs`                                    |
+| Rate limiting | @nestjs/throttler         | Max 5 req/min on all `/auth/*` endpoints                        |
+| Hosting       | Fly.io `cdg` (Paris)      | `auto_stop_machines = false`, min 1 machine always on           |
+| Env config    | ConfigService             | Never raw `process.env` in services                             |
 
 ---
 
 ## Docker Compose Services (dev)
 
-| Container | Image | Port(s) | Purpose |
-|---|---|---|---|
-| `eastpark-postgres` | `postgres:16-alpine` | 5432 | Primary database |
-| `eastpark-redis` | `redis:7-alpine` | 6379 | OTP / token blacklist / rate limiting |
-| `eastpark-mailpit` | `axllent/mailpit:latest` | 1025 (SMTP), 8025 (UI) | Catches all outbound email |
-| `eastpark-minio` | `minio/minio:latest` | 9000 (S3 API), 9001 (UI) | S3-compatible file storage |
-| `eastpark-minio-init` | `minio/mc:latest` | — | One-shot: creates `eastpark-uploads` bucket |
+| Container             | Image                    | Port(s)                  | Purpose                                     |
+| --------------------- | ------------------------ | ------------------------ | ------------------------------------------- |
+| `eastpark-postgres`   | `postgres:16-alpine`     | 5432                     | Primary database                            |
+| `eastpark-redis`      | `redis:7-alpine`         | 6379                     | OTP / token blacklist / rate limiting       |
+| `eastpark-mailpit`    | `axllent/mailpit:latest` | 1025 (SMTP), 8025 (UI)   | Catches all outbound email                  |
+| `eastpark-minio`      | `minio/minio:latest`     | 9000 (S3 API), 9001 (UI) | S3-compatible file storage                  |
+| `eastpark-minio-init` | `minio/mc:latest`        | —                        | One-shot: creates `eastpark-uploads` bucket |
 
 Named volumes: `eastpark-postgres-data`, `eastpark-redis-data`, `eastpark-minio-data`.
 MinIO credentials: set via `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` env vars (see `docker-compose.yml`). Bucket: `eastpark-uploads`.
@@ -146,38 +155,38 @@ MinIO credentials: set via `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` env vars (s
 
 ## Environment Variables
 
-| Variable | Dev Default | Required |
-|---|---|---|
-| `POSTGRES_PASSWORD` | **Must set** (used by docker-compose + DATABASE_URL) | Yes |
-| `DATABASE_URL` | `postgresql://postgres:<POSTGRES_PASSWORD>@localhost:5432/eastpark` | Yes |
-| `REDIS_URL` | `redis://localhost:6379` | Yes |
-| `AUTH_ACCESS_TOKEN_SECRET` | **Must generate** (`openssl rand -base64 48`) | Yes |
-| `AUTH_REFRESH_TOKEN_SECRET` | **Must generate** (different from above) | Yes |
-| `AUTH_ACCESS_TOKEN_EXP` | `15m` | No |
-| `AUTH_REFRESH_TOKEN_EXP` | `7d` | No |
-| `AUTH_RESET_TOKEN_TTL_SEC` | `1800` | No |
-| `SMTP_HOST` | `localhost` | Yes |
-| `SMTP_PORT` | `1025` | Yes |
-| `SMTP_USER` | (blank for dev) | Prod only |
-| `SMTP_PASS` | (blank for dev) | Prod only |
-| `EMAIL_FROM` | `noreply@eastpark.app` | Yes |
-| `SUPABASE_URL` | `http://localhost:9002` (MinIO) | Yes |
-| `SUPABASE_SERVICE_KEY` | **Must set** (same as `MINIO_ROOT_PASSWORD` for dev) | Yes |
-| `SUPABASE_BUCKET` | `eastpark-uploads` | Yes |
-| `MINIO_ROOT_USER` | `minioadmin` | Dev only |
-| `MINIO_ROOT_PASSWORD` | **Must set** (used by docker-compose) | Dev only |
-| `SEED_ADMIN_PASSWORD` | **Must set** (for `pnpm seed`) | Dev only |
-| `SEED_MERCHANT_PASSWORD` | **Must set** (for `pnpm seed`) | Dev only |
-| `SEED_RESIDENT_PASSWORD` | **Must set** (for `pnpm seed`) | Dev only |
-| `PAYMOB_API_KEY` | (blank) | Prod only |
-| `PAYMOB_HMAC_SECRET` | (blank) | Prod only |
-| `PAYMOB_INTEGRATION_ID` | (blank) | Prod only |
-| `PAYMOB_IFRAME_ID` | (blank) | Prod only |
-| `EXPO_ACCESS_TOKEN` | (blank) | No |
-| `APP_URL` | `http://localhost:3000` | Yes |
-| `HTTP_HOST` | `0.0.0.0` | No |
-| `HTTP_PORT` | `3000` | No |
-| `APP_LOG_LEVEL` | `debug` | No |
+| Variable                    | Dev Default                                                         | Required  |
+| --------------------------- | ------------------------------------------------------------------- | --------- |
+| `POSTGRES_PASSWORD`         | **Must set** (used by docker-compose + DATABASE_URL)                | Yes       |
+| `DATABASE_URL`              | `postgresql://postgres:<POSTGRES_PASSWORD>@localhost:5432/eastpark` | Yes       |
+| `REDIS_URL`                 | `redis://localhost:6379`                                            | Yes       |
+| `AUTH_ACCESS_TOKEN_SECRET`  | **Must generate** (`openssl rand -base64 48`)                       | Yes       |
+| `AUTH_REFRESH_TOKEN_SECRET` | **Must generate** (different from above)                            | Yes       |
+| `AUTH_ACCESS_TOKEN_EXP`     | `15m`                                                               | No        |
+| `AUTH_REFRESH_TOKEN_EXP`    | `7d`                                                                | No        |
+| `AUTH_RESET_TOKEN_TTL_SEC`  | `1800`                                                              | No        |
+| `SMTP_HOST`                 | `localhost`                                                         | Yes       |
+| `SMTP_PORT`                 | `1025`                                                              | Yes       |
+| `SMTP_USER`                 | (blank for dev)                                                     | Prod only |
+| `SMTP_PASS`                 | (blank for dev)                                                     | Prod only |
+| `EMAIL_FROM`                | `noreply@eastpark.app`                                              | Yes       |
+| `SUPABASE_URL`              | `http://localhost:9002` (MinIO)                                     | Yes       |
+| `SUPABASE_SERVICE_KEY`      | **Must set** (same as `MINIO_ROOT_PASSWORD` for dev)                | Yes       |
+| `SUPABASE_BUCKET`           | `eastpark-uploads`                                                  | Yes       |
+| `MINIO_ROOT_USER`           | `minioadmin`                                                        | Dev only  |
+| `MINIO_ROOT_PASSWORD`       | **Must set** (used by docker-compose)                               | Dev only  |
+| `SEED_ADMIN_PASSWORD`       | **Must set** (for `pnpm seed`)                                      | Dev only  |
+| `SEED_MERCHANT_PASSWORD`    | **Must set** (for `pnpm seed`)                                      | Dev only  |
+| `SEED_RESIDENT_PASSWORD`    | **Must set** (for `pnpm seed`)                                      | Dev only  |
+| `PAYMOB_API_KEY`            | (blank)                                                             | Prod only |
+| `PAYMOB_HMAC_SECRET`        | (blank)                                                             | Prod only |
+| `PAYMOB_INTEGRATION_ID`     | (blank)                                                             | Prod only |
+| `PAYMOB_IFRAME_ID`          | (blank)                                                             | Prod only |
+| `EXPO_ACCESS_TOKEN`         | (blank)                                                             | No        |
+| `APP_URL`                   | `http://localhost:3000`                                             | Yes       |
+| `HTTP_HOST`                 | `0.0.0.0`                                                           | No        |
+| `HTTP_PORT`                 | `3000`                                                              | No        |
+| `APP_LOG_LEVEL`             | `debug`                                                             | No        |
 
 > All env vars accessed via `ConfigService` — never `process.env` directly in services.
 > Do NOT install `@types/ioredis` — ioredis v5+ bundles its own types.
@@ -189,6 +198,7 @@ MinIO credentials: set via `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` env vars (s
 All routes are prefixed `/v1`. Auth endpoints rate-limited to 5 req/min.
 
 ### Auth (`/v1/auth`)
+
 - `POST /register` → name + email + phone + unitNumber + password → Email OTP → verified
 - `POST /verify-otp` → verify OTP code
 - `POST /resend-otp` → resend OTP, old code invalidated
@@ -202,21 +212,25 @@ All routes are prefixed `/v1`. Auth endpoints rate-limited to 5 req/min.
 - `POST /accept-invitation` → accept invite → set name + password
 
 ### Users (`/v1/user`)
+
 - `GET /profile` → current user profile
 - `PUT /` → update profile
-- `DELETE /` → self-delete account *(endpoint planned — see note below)*
+- `DELETE /` → self-delete account _(endpoint planned — see note below)_
 
 > **Note:** `DELETE /user` self-delete endpoint is pending implementation on the backend. The frontend profile screen already calls it. Current BE only has `DELETE /admin/user/:id` (admin-only).
 
 ### Shops (`/v1/shops`)
+
 - Cursor-paginated list + filters (category, search, open-now)
 - Photo gallery (`ShopPhoto[]`), working hours, reviews, saved shops
 
 ### Products (`/v1/products`)
+
 - Soft delete (`isDeleted`) — preserves `OrderItem` FKs
 - All items in one order must belong to same `shopId` — server-validated
 
 ### Orders (`/v1/orders`)
+
 - Server computes `totalAmount` — never trusts client payload
 - `OrderItem` snapshots: `productNameSnapshot` + `productNameArSnapshot`
 - `POST /orders/:id/pay/paymob` → Paymob 3-step initiation → returns `{ paymentKey, iframeUrl }`
@@ -224,6 +238,7 @@ All routes are prefixed `/v1`. Auth endpoints rate-limited to 5 req/min.
 - WebSocket `/orders` namespace → emits `orderStatusUpdated`
 
 ### Community (`/v1/community`)
+
 - Announcements (categories: GENERAL / PROMOTION / EVENT / MAINTENANCE / NEWS)
 - Official PDF reports (separate from announcements)
 - Comments on announcements
@@ -231,6 +246,7 @@ All routes are prefixed `/v1`. Auth endpoints rate-limited to 5 req/min.
 - Anonymous feedback: `userId` / `author` stripped from admin response when `isAnonymous = true`
 
 ### Governance (`/v1/governance`)
+
 - Polls — one vote per resident (`@@id([userId, pollId])`)
 - Elections — one vote per resident (`@@id([userId, electionId])`)
 - `ElectionVisibilityMode`: SEALED_UNTIL_DEADLINE / LIVE_COUNT / ADMIN_CONTROLLED
@@ -238,19 +254,23 @@ All routes are prefixed `/v1`. Auth endpoints rate-limited to 5 req/min.
 - `POST /elections/:id/candidates` [admin] — add candidates separately
 
 ### Notifications (`/v1/notifications`)
+
 - `NotificationPreference` — one row per user per `NotificationType`
 - Expo Push sent inline (no BullMQ) — only if user preference enabled
 - In-app feed stored in `Notification` DB model
 - `GET/PUT /notifications/preferences` — manage per-type opt-in
 
 ### Webhooks (`/v1/webhooks`)
+
 - `POST /webhooks/paymob` — HMAC-SHA512 verified + idempotency via Redis → flips `Order.isPaid`
 
 ### Admin (`/v1/admin`)
+
 - `DELETE /admin/user/:id` — admin-only user deletion
 - Full access to all resources + `AuditLog` DB model for governance events
 
 ### Merchant (`/v1/merchant`)
+
 - `PATCH /merchant/orders/:id/status` — update order status
 - Menu CRUD, order management
 
@@ -259,6 +279,7 @@ All routes are prefixed `/v1`. Auth endpoints rate-limited to 5 req/min.
 ## Key Domain Rules
 
 ### Auth
+
 - Register: name + email + phone + unitNumber + password → Email OTP → verified
 - Login: email + password only — no passwordless, no OTP login
 - Forgot password: reset token in Redis (30min TTL) → email link → reset screen
@@ -267,22 +288,26 @@ All routes are prefixed `/v1`. Auth endpoints rate-limited to 5 req/min.
 - Merchant/Admin: one-time signed token → `accept-invitation` screen → name + password
 
 ### Orders
+
 - Server always computes `totalAmount` — client total never trusted
 - All items in one order must belong to same `shopId`
 - Resident cancel only while `status = PLACED`
 - `isPaid` flipped exclusively by Paymob webhook
 
 ### Governance
+
 - One vote per resident per poll — enforced by `@@id([userId, pollId])`
 - One vote per resident per election — enforced by `@@id([userId, electionId])`
 - Candidate has `nameAr` + `statementAr` fields
 
 ### Files
+
 - Images: max 5 MB (jpg/png/webp)
 - PDFs: max 20 MB
 - Stored in MinIO locally, Supabase Storage in prod
 
 ### Pagination
+
 - Cursor-based on ALL list endpoints — `cursor` + `limit` query params
 - Frontend uses `useInfiniteQuery` with `getNextPageParam`
 
@@ -290,27 +315,27 @@ All routes are prefixed `/v1`. Auth endpoints rate-limited to 5 req/min.
 
 ## Notable DB Models
 
-| Model | Notes |
-|---|---|
-| `AuditLog` | Admin actions + governance events |
-| `Invitation` | One-time signed token; tracks `usedAt` + `expiresAt` |
-| `Report` | Separate from `Announcement` — official compound PDF reports |
-| `NotificationPreference` | One row per user per `NotificationType` |
-| `SavedShop` | `@@id([userId, shopId])` — resident bookmarks |
-| `Review` | `@@unique([userId, shopId])` — one review per shop per resident |
-| `ShopPhoto` | Gallery model — not single `coverUrl` |
+| Model                    | Notes                                                           |
+| ------------------------ | --------------------------------------------------------------- |
+| `AuditLog`               | Admin actions + governance events                               |
+| `Invitation`             | One-time signed token; tracks `usedAt` + `expiresAt`            |
+| `Report`                 | Separate from `Announcement` — official compound PDF reports    |
+| `NotificationPreference` | One row per user per `NotificationType`                         |
+| `SavedShop`              | `@@id([userId, shopId])` — resident bookmarks                   |
+| `Review`                 | `@@unique([userId, shopId])` — one review per shop per resident |
+| `ShopPhoto`              | Gallery model — not single `coverUrl`                           |
 
 ---
 
 ## Infrastructure (Dev vs Prod)
 
-| Concern | Dev | Prod |
-|---|---|---|
-| Database | Docker `postgres:16-alpine` | Supabase PostgreSQL (500MB free) |
-| Cache | Docker `redis:7-alpine` | Upstash Redis (10K req/day free) |
-| File storage | Docker MinIO | Supabase Storage (1GB free) |
-| Email | Docker Mailpit | Brevo SMTP (300/day free) |
-| Hosting | Local (`pnpm dev`) | Fly.io `cdg` (Paris) |
+| Concern      | Dev                         | Prod                             |
+| ------------ | --------------------------- | -------------------------------- |
+| Database     | Docker `postgres:16-alpine` | Supabase PostgreSQL (500MB free) |
+| Cache        | Docker `redis:7-alpine`     | Upstash Redis (10K req/day free) |
+| File storage | Docker MinIO                | Supabase Storage (1GB free)      |
+| Email        | Docker Mailpit              | Brevo SMTP (300/day free)        |
+| Hosting      | Local (`pnpm dev`)          | Fly.io `cdg` (Paris)             |
 
 **Hard rule: 100% free stack.** Every service is open-source, self-hostable, or permanent free tier.
 

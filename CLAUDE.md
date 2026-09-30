@@ -9,16 +9,25 @@
 
 All reference files live in `Documentation/` — read these before exploring the codebase:
 
-| File | Purpose |
-|---|---|
-| `Documentation/GUIDE.md` | Architecture, tech map, DB relationships, auth flow, file uploads, real-time, how to make changes |
-| `Documentation/APPCONTEXT.md` | Full tech stack, all API routes, domain rules, all locked decisions |
-| `Documentation/HOWTORUN.md` | Local dev setup, all pnpm commands, Docker services, troubleshooting |
-| `Documentation/WSL_NETWORKING.md` | WSL2 NAT explained, portproxy setup, why WSL IP changes, full phone→backend request flow |
+| File                              | Purpose                                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `Documentation/GUIDE.md`          | Architecture, tech map, DB relationships, auth flow, file uploads, real-time, how to make changes |
+| `Documentation/APPCONTEXT.md`     | Full tech stack, all API routes, domain rules, all locked decisions                               |
+| `Documentation/HOWTORUN.md`       | Local dev setup, all pnpm commands, Docker services, troubleshooting                              |
+| `Documentation/WSL_NETWORKING.md` | WSL2 NAT explained, portproxy setup, why WSL IP changes, full phone→backend request flow          |
 
 ---
 
 ## Status
+
+### Render migration prepared — 2026-09-30
+
+- `render.yaml` defines a Frankfurt free Docker web service with `/health` monitoring and explicit
+  production configuration. Secret values remain dashboard-managed with `sync: false`.
+- `Documentation/RENDER.md` contains the safe Fly-to-Render cutover and rollback procedure.
+- Fly remains production until Render is created and health, CORS, registration, auth, and
+  announcement checks pass. Web order tracking should use polling initially because free-service
+  sleep cannot guarantee persistent Socket.io sessions.
 
 ### Active-unit reservation — deployed 2026-09-30
 
@@ -61,6 +70,7 @@ This does not block `POST /v1/residents/leads`.
 
 ✅ **2026-09-29 pass: 8 commits (`ef82e2c`…`43af496`), tree clean, nothing pushed.**
 `pnpm typecheck` exit 0 · `pnpm lint:check` exit 0 · **tests 101/101** (was 62/62).
+
 - Docker build **repaired** — it could not have succeeded before: the `prisma` CLI was a
   devDependency (so the production image had no binary for `migrate deploy`), and `postinstall`
   ran `prisma generate` before `prisma/` was copied. Also `exec` for SIGTERM, non-root user.
@@ -88,6 +98,7 @@ Earlier: all 2026-07-19 audit blockers fixed 2026-07-26 — see `backend_review.
 ✅ All 8 phases + all 6 gaps + wiring fixes + 2 full audit passes complete. Running locally since 2026-04-02. Branch: main.
 
 ### Audit 2026-07-19 → all fixed 2026-07-26 (verified with Node v24 via nvm)
+
 - **BE-1 ✅ FIXED:** added `descriptionAr String?` to `Election` model (schema.prisma) — was a runtime Prisma crash + tsc error. Commit `42d6eaa`.
 - **BE-2 ✅ FIXED:** replaced the lone incremental migration with a single full baseline migration `00000000000000_init` (`prisma migrate diff --from-empty`) + set `migration_lock.toml` provider. `prisma migrate deploy` now builds a complete fresh DB. Commit `42d6eaa`.
 - **BE-3 ✅ FIXED:** `UserResponseDto` passwordHash/pushToken made optional (3 auth.service sites); invitation DTO uses `typeof Role.MERCHANT | typeof Role.ADMIN`. `pnpm typecheck` exits 0. Commit `5853834`.
@@ -97,6 +108,7 @@ Earlier: all 2026-07-19 audit blockers fixed 2026-07-26 — see `backend_review.
 - **✅ Corrected:** `DELETE /user` self-delete **is implemented** (`src/modules/user/controllers/user.public.controller.ts:62-69`) — old "pending" note was wrong.
 
 ### Remaining after web launch
+
 - Rotate Fly, Supabase/database, and Brevo credentials exposed during initial deployment.
 - Configure real `PAYMOB_INTEGRATION_ID`, `PAYMOB_IFRAME_ID`, and `PAYMOB_HMAC_SECRET` before card payments.
 - The Paymob webhook amount-verification and money `Float` roadmap items remain open.
@@ -117,9 +129,9 @@ Earlier: all 2026-07-19 audit blockers fixed 2026-07-26 — see `backend_review.
 
 ## Admin Credentials
 
-| Field | Value |
-|---|---|
-| Email | `admin@eastpark.app` |
+| Field    | Value                                 |
+| -------- | ------------------------------------- |
+| Email    | `admin@eastpark.app`                  |
 | Password | Set via `SEED_ADMIN_PASSWORD` env var |
 
 Defined in `prisma/seed-data.ts` (overridable via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` env vars). Re-run `pnpm seed` is idempotent — skips if merchants already exist.
@@ -128,12 +140,12 @@ Defined in `prisma/seed-data.ts` (overridable via `SEED_ADMIN_EMAIL` / `SEED_ADM
 
 ## User Roles
 
-| Role | Registration Flow |
-|---|---|
-| Guest | No auth. Read-only API access to public endpoints. |
-| Resident | POST /auth/register → POST /auth/verify-otp → verified |
+| Role     | Registration Flow                                                        |
+| -------- | ------------------------------------------------------------------------ |
+| Guest    | No auth. Read-only API access to public endpoints.                       |
+| Resident | POST /auth/register → POST /auth/verify-otp → verified                   |
 | Merchant | Admin sends email invite → one-time token → POST /auth/accept-invitation |
-| Admin | Admin sends email invite → one-time token → POST /auth/accept-invitation |
+| Admin    | Admin sends email invite → one-time token → POST /auth/accept-invitation |
 
 ---
 
@@ -148,27 +160,27 @@ pnpm seed           # seeds everything; skips if merchants already exist (idempo
 
 **What gets seeded:**
 
-| Entity | Count | Detail |
-|---|---|---|
-| Users | 14 | 1 admin · 5 merchants · 8 residents |
-| Shops | 5 | café · grocery · butcher · services · health |
-| Products | 42 | 8–10 per shop |
-| Orders | 14 | all statuses: PLACED → DELIVERED, one CANCELLED |
-| Reviews | 16 | every shop has 2–4 reviews |
-| Announcements | 8 | mix of GENERAL / EVENT / MAINTENANCE / NEWS / PROMOTION |
-| Reports | 5 | quarterly financial + maintenance + security |
-| Polls | 3 | 18 votes across 8 residents |
-| Election | 1 | 3 candidates, 6 votes |
-| Feedback | 8 | 5 admin replies |
-| Notifications | 15 | across all types |
+| Entity        | Count | Detail                                                  |
+| ------------- | ----- | ------------------------------------------------------- |
+| Users         | 14    | 1 admin · 5 merchants · 8 residents                     |
+| Shops         | 5     | café · grocery · butcher · services · health            |
+| Products      | 42    | 8–10 per shop                                           |
+| Orders        | 14    | all statuses: PLACED → DELIVERED, one CANCELLED         |
+| Reviews       | 16    | every shop has 2–4 reviews                              |
+| Announcements | 8     | mix of GENERAL / EVENT / MAINTENANCE / NEWS / PROMOTION |
+| Reports       | 5     | quarterly financial + maintenance + security            |
+| Polls         | 3     | 18 votes across 8 residents                             |
+| Election      | 1     | 3 candidates, 6 votes                                   |
+| Feedback      | 8     | 5 admin replies                                         |
+| Notifications | 15    | across all types                                        |
 
 **Test credentials:**
 
 All seed passwords are set via environment variables: `SEED_ADMIN_PASSWORD`, `SEED_MERCHANT_PASSWORD`, `SEED_RESIDENT_PASSWORD`. See `.env.example`.
 
-| Role | Email |
-|---|---|
-| Admin | `admin@eastpark.app` |
+| Role      | Email                      |
+| --------- | -------------------------- |
+| Admin     | `admin@eastpark.app`       |
 | Merchants | `merchant1–5@eastpark.app` |
 | Residents | `resident1–8@eastpark.app` |
 
@@ -176,19 +188,19 @@ All seed passwords are set via environment variables: `SEED_ADMIN_PASSWORD`, `SE
 
 ## Stack (locked)
 
-| Layer | Choice |
-|---|---|
-| Framework | NestJS + Fastify adapter (NOT Express) |
-| Package manager | pnpm |
-| ORM | Prisma + PostgreSQL (Supabase free tier in prod) |
-| Cache | ioredis → Upstash Redis in prod (OTP, rate limiting, token blacklist) |
-| File storage | Supabase Storage (prod) / MinIO docker (dev) |
-| Email | Brevo SMTP (prod) / Mailpit docker (dev) |
-| Push | Expo Push Service inline — no BullMQ, no queues |
-| Real-time | Socket.io WebSocket gateway — namespace `/orders` |
-| Cron | @nestjs/schedule — election auto-open every 5min |
-| Rate limiting | @nestjs/throttler — max 5 req/min on `/auth/*` |
-| Hosting | Fly.io `cdg` (Paris), `auto_stop_machines = false` |
+| Layer           | Choice                                                                |
+| --------------- | --------------------------------------------------------------------- |
+| Framework       | NestJS + Fastify adapter (NOT Express)                                |
+| Package manager | pnpm                                                                  |
+| ORM             | Prisma + PostgreSQL (Supabase free tier in prod)                      |
+| Cache           | ioredis → Upstash Redis in prod (OTP, rate limiting, token blacklist) |
+| File storage    | Supabase Storage (prod) / MinIO docker (dev)                          |
+| Email           | Brevo SMTP (prod) / Mailpit docker (dev)                              |
+| Push            | Expo Push Service inline — no BullMQ, no queues                       |
+| Real-time       | Socket.io WebSocket gateway — namespace `/orders`                     |
+| Cron            | @nestjs/schedule — election auto-open every 5min                      |
+| Rate limiting   | @nestjs/throttler — max 5 req/min on `/auth/*`                        |
+| Hosting         | Fly.io `cdg` (Paris), `auto_stop_machines = false`                    |
 
 ---
 
@@ -227,10 +239,12 @@ src/
 **ConfigService everywhere.** Never `process.env.KEY` in services — always `this.configService.get<string>('KEY')`.
 
 **Auth decorators:**
+
 - `@AllowedRoles([Role.RESIDENT])` — restrict endpoint by role
 - `@AuthUser() actor: IAuthUser` — extracts `{ userId, role }` from JWT payload
 
 **Cursor pagination (all list endpoints):**
+
 ```typescript
 take: limit + 1,
 ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
@@ -243,6 +257,7 @@ orderBy: { createdAt: 'desc' },
 **OTP / reset tokens.** Stored in Redis with TTL. OTP: 10min (`OTP_TTL = 600`). Reset token: 30min.
 
 **Paymob flow:**
+
 1. `POST /v1/orders/:id/pay/paymob` [RESIDENT] → auth token → register order → payment key (all via Paymob API)
 2. Returns `{ paymentKey, iframeUrl }` — FE opens iframe
 3. Webhook: `POST /webhooks/paymob` — HMAC-SHA512 verified, idempotent via Redis, flips `order.isPaid = true`
@@ -306,12 +321,12 @@ pnpm docker:up    # ALWAYS first — postgres + redis + mailpit + minio
 pnpm dev          # NestJS hot-reload on http://localhost:3000/v1
 ```
 
-| URL | Purpose |
-|---|---|
-| http://localhost:3000/docs | Swagger UI |
-| http://localhost:8025 | Mailpit (emails) |
-| http://localhost:9001 | MinIO console (credentials in `.env`) |
-| http://localhost:5555 | Prisma Studio (`pnpm prisma:studio`) |
+| URL                        | Purpose                               |
+| -------------------------- | ------------------------------------- |
+| http://localhost:3000/docs | Swagger UI                            |
+| http://localhost:8025      | Mailpit (emails)                      |
+| http://localhost:9001      | MinIO console (credentials in `.env`) |
+| http://localhost:5555      | Prisma Studio (`pnpm prisma:studio`)  |
 
 ---
 

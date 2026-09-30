@@ -22,6 +22,14 @@ values so no dev-only dependency is loaded at runtime.
 Operational follow-up: rotate credentials exposed during deployment and configure real Paymob
 credentials before enabling card payments. The resident lead endpoint is live and not blocked.
 
+### Web parity consumer
+
+The deployed web app is expanding toward mobile feature parity through same-origin Next.js BFF routes.
+This API's existing routes and DTO behavior are authoritative; web implementation must reuse them
+instead of inventing parallel endpoints. Protected browser flows keep tokens in server-managed
+`HttpOnly` cookies. The deferred parent `packages/shared` experiment is not a backend dependency;
+NestJS, Prisma, auth, and transport code stay in this repository.
+
 ---
 
 ## Status

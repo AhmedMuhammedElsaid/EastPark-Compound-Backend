@@ -20,6 +20,17 @@ All reference files live in `Documentation/` — read these before exploring the
 
 ## Status
 
+### Web parity consumer — 2026-09-30
+
+The deployed `eastpark-web-app` is expanding toward mobile feature parity. It uses same-origin Next.js
+BFF routes and `HttpOnly` cookies; browsers should not receive backend access/refresh tokens or call
+protected Fly endpoints directly. Existing backend routes and DTO behavior are authoritative. Do not
+invent or duplicate endpoints for web when an existing mobile contract already serves the flow.
+
+The parent pnpm workspace and `packages/shared` experiment are deferred. This backend remains
+independently installable and does not consume it. Never move NestJS, Prisma, transport, auth, or
+framework code into a shared package.
+
 ✅ **2026-09-30 — DEPLOYED TO PRODUCTION.**
 
 - API: `https://eastpark-backend.fly.dev`

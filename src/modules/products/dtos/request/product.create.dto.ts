@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
     IsBoolean,
@@ -21,7 +20,7 @@ export class ProductCreateDto {
     @IsNotEmpty()
     nameAr: string;
 
-    @ApiPropertyOptional({ example: faker.commerce.productDescription() })
+    @ApiPropertyOptional({ example: 'Freshly brewed espresso with milk' })
     @IsString()
     @IsOptional()
     description?: string;

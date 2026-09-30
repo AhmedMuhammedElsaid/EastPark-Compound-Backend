@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { ApiProperty } from '@nestjs/swagger';
 import {
     IsEmail,
@@ -18,13 +17,13 @@ const PASSWORD_MSG =
 // ── Register ──────────────────────────────────────────────────────────────────
 
 export class AuthRegisterDto {
-    @ApiProperty({ example: faker.person.fullName() })
+    @ApiProperty({ example: 'Ahmed Hassan' })
     @IsString()
     @IsNotEmpty()
     @Length(2, 100)
     name: string;
 
-    @ApiProperty({ example: faker.internet.email() })
+    @ApiProperty({ example: 'ahmed@example.com' })
     @IsEmail()
     @IsNotEmpty()
     email: string;
@@ -49,7 +48,7 @@ export class AuthRegisterDto {
 // ── Verify OTP ────────────────────────────────────────────────────────────────
 
 export class AuthVerifyOtpDto {
-    @ApiProperty({ example: faker.internet.email() })
+    @ApiProperty({ example: 'ahmed@example.com' })
     @IsEmail()
     @IsNotEmpty()
     email: string;
@@ -64,7 +63,7 @@ export class AuthVerifyOtpDto {
 // ── Resend OTP ────────────────────────────────────────────────────────────────
 
 export class AuthResendOtpDto {
-    @ApiProperty({ example: faker.internet.email() })
+    @ApiProperty({ example: 'ahmed@example.com' })
     @IsEmail()
     @IsNotEmpty()
     email: string;
@@ -73,7 +72,7 @@ export class AuthResendOtpDto {
 // ── Login ─────────────────────────────────────────────────────────────────────
 
 export class AuthLoginDto {
-    @ApiProperty({ example: faker.internet.email() })
+    @ApiProperty({ example: 'ahmed@example.com' })
     @IsEmail()
     @IsNotEmpty()
     email: string;
@@ -87,7 +86,7 @@ export class AuthLoginDto {
 // ── Forgot Password ───────────────────────────────────────────────────────────
 
 export class AuthForgotPasswordDto {
-    @ApiProperty({ example: faker.internet.email() })
+    @ApiProperty({ example: 'ahmed@example.com' })
     @IsEmail()
     @IsNotEmpty()
     email: string;
@@ -116,7 +115,7 @@ export class AcceptInvitationDto {
     @IsNotEmpty()
     token: string;
 
-    @ApiProperty({ example: faker.person.fullName() })
+    @ApiProperty({ example: 'Ahmed Hassan' })
     @IsString()
     @IsNotEmpty()
     @Length(2, 100)

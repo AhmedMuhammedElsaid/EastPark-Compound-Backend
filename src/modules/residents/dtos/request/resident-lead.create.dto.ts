@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
@@ -11,13 +10,13 @@ import {
 } from 'class-validator';
 
 export class ResidentLeadCreateDto {
-    @ApiProperty({ example: faker.person.fullName() })
+    @ApiProperty({ example: 'Ahmed Hassan' })
     @IsString()
     @IsNotEmpty()
     @Length(2, 100)
     name: string;
 
-    @ApiProperty({ example: faker.internet.email() })
+    @ApiProperty({ example: 'ahmed@example.com' })
     @IsEmail()
     @IsNotEmpty()
     email: string;

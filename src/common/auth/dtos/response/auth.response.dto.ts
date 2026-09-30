@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
@@ -6,13 +5,13 @@ import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 import { UserResponseDto } from 'src/modules/user/dtos/response/user.response';
 
 export class TokenDto {
-    @ApiProperty({ example: faker.string.alphanumeric(64) })
+    @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
     @Expose()
     @IsString()
     @IsNotEmpty()
     accessToken: string;
 
-    @ApiProperty({ example: faker.string.alphanumeric(64) })
+    @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
     @Expose()
     @IsString()
     @IsNotEmpty()

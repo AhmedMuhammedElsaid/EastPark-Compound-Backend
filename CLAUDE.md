@@ -20,9 +20,21 @@ All reference files live in `Documentation/` — read these before exploring the
 
 ## Status
 
-⚠️ **2026-09-29 — `docker build` and `prisma migrate deploy` have NEVER been run.** No Docker
-daemon and no database were reachable in the WSL environment where the fixes were made. Both are
-verified by reasoning only. If a deploy fails, look there first.
+✅ **2026-09-30 — DEPLOYED TO PRODUCTION.**
+
+- API: `https://eastpark-backend.fly.dev`
+- Health: HTTP 200 with Prisma `up`
+- Public lead endpoint: HTTP 200 and Supabase insert verified
+- Vercel-origin CORS preflight: HTTP 204
+- Remote Docker image built and pushed successfully.
+- `prisma migrate deploy` connected through the Supabase session pooler and reported no pending
+  migrations.
+- Production startup fixes: `.swcrc` included in Docker context, production install skips Husky
+  lifecycle scripts and explicitly generates Prisma, and all DTO Faker runtime imports were removed.
+
+**Required cleanup:** rotate credentials exposed during deployment. `PAYMOB_HMAC_SECRET` is a
+temporary startup-only value; configure real Paymob credentials before enabling card payments.
+This does not block `POST /v1/residents/leads`.
 
 ✅ **2026-09-29 pass: 8 commits (`ef82e2c`…`43af496`), tree clean, nothing pushed.**
 `pnpm typecheck` exit 0 · `pnpm lint:check` exit 0 · **tests 101/101** (was 62/62).
@@ -61,8 +73,10 @@ Earlier: all 2026-07-19 audit blockers fixed 2026-07-26 — see `backend_review.
 - **B-7 (from FE audit) ✅ FIXED:** new merchant self-service module (`src/modules/merchant/`) exposes `/merchant/shop|products|orders*`, resolving the caller's shop from the JWT — the mobile app's Merchant Tools now works (was all 404s). Commit `988e7c6`.
 - **✅ Corrected:** `DELETE /user` self-delete **is implemented** (`src/modules/user/controllers/user.public.controller.ts:62-69`) — old "pending" note was wrong.
 
-### Remaining before ship
-- `fly secrets set PAYMOB_INTEGRATION_ID=<val> PAYMOB_IFRAME_ID=<val>` then `fly deploy` (Docker CMD runs `prisma migrate deploy` — now safe with the baseline).
+### Remaining after web launch
+- Rotate Fly, Supabase/database, and Brevo credentials exposed during initial deployment.
+- Configure real `PAYMOB_INTEGRATION_ID`, `PAYMOB_IFRAME_ID`, and `PAYMOB_HMAC_SECRET` before card payments.
+- The Paymob webhook amount-verification and money `Float` roadmap items remain open.
 
 ---
 

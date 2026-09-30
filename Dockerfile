@@ -25,7 +25,8 @@ WORKDIR /app
 # Production deps only (prisma CLI is a runtime dep — needed by migrate deploy)
 COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma/
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts \
+	&& pnpm exec prisma generate
 
 # Compiled output
 COPY --from=builder /app/dist ./dist

@@ -33,3 +33,7 @@ yarn-error.log
 # yalc
 .yalc
 yalc.lock
+
+# Local deploy credentials — never commit
+.deploy-secrets
+.fly-token

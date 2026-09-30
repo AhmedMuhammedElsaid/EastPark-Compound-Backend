@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { $Enums, User } from '@prisma/client';
 import { Exclude, Expose } from 'class-transformer';
@@ -12,17 +11,17 @@ import {
 } from 'class-validator';
 
 export class UserResponseDto implements Partial<User> {
-    @ApiProperty({ example: faker.string.nanoid() })
+    @ApiProperty({ example: 'clx1234567890' })
     @Expose()
     @IsString()
     id: string;
 
-    @ApiProperty({ example: faker.person.fullName() })
+    @ApiProperty({ example: 'Ahmed Hassan' })
     @Expose()
     @IsString()
     name: string;
 
-    @ApiProperty({ example: faker.internet.email() })
+    @ApiProperty({ example: 'ahmed@example.com' })
     @Expose()
     @IsEmail()
     email: string;
@@ -40,7 +39,7 @@ export class UserResponseDto implements Partial<User> {
     unitNumber: string | null;
 
     @ApiProperty({
-        example: faker.image.avatar(),
+        example: 'https://storage.example.com/avatars/user.jpg',
         required: false,
         nullable: true,
     })
@@ -59,12 +58,12 @@ export class UserResponseDto implements Partial<User> {
     @IsBoolean()
     isVerified: boolean;
 
-    @ApiProperty({ example: faker.date.past().toISOString() })
+    @ApiProperty({ example: '2026-01-15T10:30:00.000Z' })
     @Expose()
     @IsDate()
     createdAt: Date;
 
-    @ApiProperty({ example: faker.date.recent().toISOString() })
+    @ApiProperty({ example: '2026-09-30T10:30:00.000Z' })
     @Expose()
     @IsDate()
     updatedAt: Date;

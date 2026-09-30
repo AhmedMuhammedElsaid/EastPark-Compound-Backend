@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
@@ -10,7 +9,7 @@ import {
 } from 'class-validator';
 
 export class UserUpdateDto {
-    @ApiProperty({ example: faker.person.fullName(), required: false })
+    @ApiProperty({ example: 'Ahmed Hassan', required: false })
     @IsString()
     @IsOptional()
     @Length(2, 100)

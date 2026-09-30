@@ -6,6 +6,24 @@
 
 ---
 
+## Production Snapshot — 2026-09-30
+
+- API: `https://eastpark-backend.fly.dev` on Fly.io `cdg`
+- Health: HTTP 200; Prisma `up`
+- `POST /v1/residents/leads`: HTTP 200; Supabase insert verified
+- CORS from `https://eastpark-web-app.vercel.app`: HTTP 204 preflight
+- Remote Docker build and `prisma migrate deploy`: verified by execution
+- Database and file storage: Supabase
+
+Production startup required keeping `.swcrc` in the Docker context, skipping Husky scripts during
+the production install, explicitly generating Prisma, and replacing DTO Faker examples with static
+values so no dev-only dependency is loaded at runtime.
+
+Operational follow-up: rotate credentials exposed during deployment and configure real Paymob
+credentials before enabling card payments. The resident lead endpoint is live and not blocked.
+
+---
+
 ## Status
 
 **All 8 phases + all 6 gaps + wiring fixes + post-audit patches: 100% complete. Production-ready.**

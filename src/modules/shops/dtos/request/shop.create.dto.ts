@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ShopCategory } from '@prisma/client';
 import {
@@ -23,7 +22,7 @@ export class ShopCreateDto {
     @IsNotEmpty()
     nameAr: string;
 
-    @ApiPropertyOptional({ example: faker.company.buzzPhrase() })
+    @ApiPropertyOptional({ example: 'Neighborhood cafe and bakery' })
     @IsString()
     @IsOptional()
     description?: string;

@@ -58,7 +58,6 @@ eslint.config.mjs
 .prettierrc
 .prettierignore
 commitlint.config.js
-.swcrc
 
 # Dev-only files
 docker-compose.yml
